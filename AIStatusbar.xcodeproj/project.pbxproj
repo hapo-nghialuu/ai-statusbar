@@ -32,6 +32,10 @@
 		DDDD001B0000000000B00E /* QuotaPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD001C000000000000F00E /* QuotaPanel.swift */; };
 		DDDD001D0000000000B00F /* ConfigPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD001E000000000000F00F /* ConfigPanel.swift */; };
 		EEEE0001000000000000B001 /* SettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE0002000000000000F001 /* SettingsWindow.swift */; };
+		C0DE0001000000000000B001 /* CodexAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0002000000000000F001 /* CodexAuth.swift */; };
+		C0DE0003000000000000B002 /* CodexUsageAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0004000000000000F002 /* CodexUsageAPI.swift */; };
+		C0DE0005000000000000B003 /* CodexProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0006000000000000F003 /* CodexProvider.swift */; };
+		C0DE0007000000000000B004 /* CodexProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0008000000000000F004 /* CodexProviderTests.swift */; };
 
 		EEEE0004000000000000B001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEEE0003000000000000F001 /* Assets.xcassets */; };
 		FFFF0001000000000000B001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF0002000000000000F001 /* AppDelegate.swift */; };
@@ -61,6 +65,7 @@
 		CCCC000A000000000000F005 /* QuotaServicePollingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/QuotaServicePollingTests.swift; sourceTree = "<group>"; };
 		CCCC000C000000000000F006 /* ConfigServiceAtomicWriteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/ConfigServiceAtomicWriteTests.swift; sourceTree = "<group>"; };
 		CCCC000E000000000000F007 /* StubURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/StubURLProtocol.swift; sourceTree = "<group>"; };
+		C0DE0008000000000000F004 /* CodexProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/CodexProviderTests.swift; sourceTree = "<group>"; };
 		CCCC0010000000000000F008 /* AIStatusbarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIStatusbarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDDD0002000000000000F001 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/KeychainService.swift; sourceTree = "<group>"; };
 		DDDD0004000000000000F002 /* ConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/ConfigService.swift; sourceTree = "<group>"; };
@@ -76,6 +81,9 @@
 		DDDD001C000000000000F00E /* QuotaPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/QuotaPanel.swift; sourceTree = "<group>"; };
 		DDDD001E000000000000F00F /* ConfigPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/ConfigPanel.swift; sourceTree = "<group>"; };
 		EEEE0002000000000000F001 /* SettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/SettingsWindow.swift; sourceTree = "<group>"; };
+		C0DE0002000000000000F001 /* CodexAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/Codex/CodexAuth.swift; sourceTree = "<group>"; };
+		C0DE0004000000000000F002 /* CodexUsageAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/Codex/CodexUsageAPI.swift; sourceTree = "<group>"; };
+		C0DE0006000000000000F003 /* CodexProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/Codex/CodexProvider.swift; sourceTree = "<group>"; };
 
 		EEEE0003000000000000F001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 
@@ -117,6 +125,7 @@
 				CCCC0009000000000000B005 /* QuotaServicePollingTests.swift in Sources */,
 				CCCC000B0000000000B006 /* ConfigServiceAtomicWriteTests.swift in Sources */,
 				CCCC000D000000000000B007 /* StubURLProtocol.swift in Sources */,
+				C0DE0007000000000000B004 /* CodexProviderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -304,6 +313,9 @@
 				DDDD001B0000000000B00E /* QuotaPanel.swift in Sources */,
 				DDDD001D0000000000B00F /* ConfigPanel.swift in Sources */,
 				EEEE0001000000000000B001 /* SettingsWindow.swift in Sources */,
+				C0DE0001000000000000B001 /* CodexAuth.swift in Sources */,
+				C0DE0003000000000000B002 /* CodexUsageAPI.swift in Sources */,
+				C0DE0005000000000000B003 /* CodexProvider.swift in Sources */,
 				FFFF0001000000000000B001 /* AppDelegate.swift in Sources */,
 				FFFF0003000000000000B002 /* ServicesContainer.swift in Sources */,
 			);
@@ -479,6 +491,8 @@
 				SWIFT_VERSION = 5.0;
 				PRODUCT_NAME = AIStatusbarTests;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.local.aistatusbar.tests";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AIStatusbar.app/Contents/MacOS/AIStatusbar";
+				BUNDLE_LOADER = "$(TEST_HOST)";
 			};
 			name = Debug;
 		};
@@ -495,6 +509,9 @@
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
+
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AIStatusbar.app/Contents/MacOS/AIStatusbar";
+				BUNDLE_LOADER = "$(TEST_HOST)";
 			};
 			name = Release;
 		};

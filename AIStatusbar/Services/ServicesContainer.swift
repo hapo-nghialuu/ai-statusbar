@@ -23,6 +23,9 @@ final class ServicesContainer: ObservableObject {
         for cfg in doc.providers where cfg.enabled {
             if cfg.id == "minimax" {
                 providers.append(MiniMaxProvider(keychain: ks))
+            } else if cfg.id == "codex" {
+                // Zero-config: reads ~/.codex/auth.json, no keychain token needed.
+                providers.append(CodexProvider())
             } else if cfg.id == "hapo" {
                 let hapoConfig = HapoHubConfig(
                     id: cfg.id,
@@ -43,6 +46,7 @@ final class ServicesContainer: ObservableObject {
         if providers.isEmpty {
             providers = [
                 MiniMaxProvider(keychain: ks),
+                CodexProvider(),
                 HapoHubFactory.make(
                     session: .shared,
                     config: HapoHubConfig.real,
