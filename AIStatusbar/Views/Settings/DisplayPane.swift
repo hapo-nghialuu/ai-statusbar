@@ -34,7 +34,7 @@ struct DisplayPane: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .formStyle(.grouped)
+        
         .scrollContentBackground(.hidden)
     }
 }

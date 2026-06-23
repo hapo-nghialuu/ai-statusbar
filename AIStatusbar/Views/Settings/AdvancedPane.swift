@@ -33,7 +33,7 @@ struct AdvancedPane: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .formStyle(.grouped)
+        
         .scrollContentBackground(.hidden)
     }
 }

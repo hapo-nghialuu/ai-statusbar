@@ -56,6 +56,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             button.target = self
             button.action = #selector(togglePanel(_:))
+
+            // Attach a menu with a Settings… item bound to Cmd+, so the system
+            // routes the keyboard shortcut to OUR `openSettings(_:)` action.
+            // Without this Cmd+, falls through to whatever app is currently
+            // foreground (e.g. Finder's Preferences) because menu-bar apps
+            // (`LSUIElement = YES`) don't participate in the default Cmd+,
+            // chain.
+            let menu = NSMenu()
+            let settingsItem = NSMenuItem(
+                title: "Settings…",
+                action: #selector(openSettings(_:)),
+                keyEquivalent: ",")
+            settingsItem.keyEquivalentModifierMask = [.command]
+            settingsItem.target = self
+            menu.addItem(settingsItem)
+            statusItem.menu = menu
             button.image = MenuBarIconRenderer.iconImage()
             button.imageScaling = .scaleProportionallyDown
             button.imagePosition = .imageLeft

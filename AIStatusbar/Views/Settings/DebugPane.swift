@@ -47,7 +47,7 @@ struct DebugPane: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .formStyle(.grouped)
+        
         .scrollContentBackground(.hidden)
     }
 }

@@ -85,7 +85,7 @@ struct GeneralPane: View {
                 SettingsSectionHeader(title: "Tự động")
             }
         }
-        .formStyle(.grouped)
+        
         .scrollContentBackground(.hidden)
     }
 }

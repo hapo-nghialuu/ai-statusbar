@@ -52,7 +52,7 @@ struct ProvidersPane: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            .formStyle(.grouped)
+            
             .scrollContentBackground(.hidden)
 
             if let b = savedBanner {
