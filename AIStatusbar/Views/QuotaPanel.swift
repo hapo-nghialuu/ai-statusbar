@@ -1,13 +1,16 @@
 import SwiftUI
+import AppKit
 
-/// Vocabby-inspired popover body:
-///   - Cream (#FBF6EE) background
-///   - Header card: provider name + level + last-updated
-///   - Per-provider section cards: each window = a colored bar (green for
-///     "remaining", orange for "used") with 2-column data
-///   - Footer: orange "ĐANG DÙNG" pill button + menu items
-struct QuotaPanel: View {
+// MARK: - Quota Overview (CodexBar-style)
+
+/// CodexBar-inspired popover body:
+///   - Top: tabs over enabled providers (MiniMax / Hapo / ...).
+///   - Below tabs: provider info card (name + plan + last updated + status pill).
+///   - Then: per-window quota bars for the selected provider.
+///   - Bottom: action list (Refresh · Settings · About · Quit).
+struct QuotaOverview: View {
     @EnvironmentObject var quota: QuotaService
+    @State private var selectedProviderId: String? = nil
 
     var body: some View {
         ZStack {
@@ -21,173 +24,160 @@ struct QuotaPanel: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                VStack(alignment: .leading, spacing: 12) {
-                    // Header card
-                    HeaderCard(footerText: headerTime)
-                    // Per-provider cards
-                    ForEach(Array(quota.statuses.enumerated()), id: \.element.id) { _, s in
-                        ProviderCard(status: s)
+                VStack(alignment: .leading, spacing: 10) {
+                    // Default selection: first provider (kept across refreshes
+                    // when the same id is still present).
+                    let selected = effectiveSelectedId()
+                    ProviderTabs(
+                        providers: quota.statuses,
+                        selectedId: Binding(
+                            get: { selected },
+                            set: { selectedProviderId = $0 }
+                        )
+                    )
+                    if let s = quota.statuses.first(where: { $0.id == selected })
+                        ?? quota.statuses.first {
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ProviderHeaderCard(status: s)
+                                ProviderCard(status: s)
+                            }
+                        }
                     }
-                    // Footer
-                    FooterMenu()
+                    ActionsList()
                 }
                 .padding(.horizontal, 14)
-                .padding(.vertical, 14)
+                .padding(.vertical, 12)
+            }
+        }
+        .onAppear {
+            if selectedProviderId == nil,
+               let first = quota.statuses.first {
+                selectedProviderId = first.id
+            }
+        }
+        .onChange(of: quota.statuses.map(\.id)) { ids in
+            // If the previously-selected provider disappears (toggled off),
+            // fall back to the first remaining one.
+            if let sel = selectedProviderId, !ids.contains(sel) {
+                selectedProviderId = ids.first
+            } else if selectedProviderId == nil {
+                selectedProviderId = ids.first
             }
         }
     }
 
-    private var headerTime: String {
-        let secs: Int
-        if let last = quota.statuses.map(\.lastUpdated).max() {
-            secs = Int(Date().timeIntervalSince(last))
-        } else { secs = 0 }
+    private func effectiveSelectedId() -> String {
+        if let sel = selectedProviderId,
+           quota.statuses.contains(where: { $0.id == sel }) {
+            return sel
+        }
+        return quota.statuses.first?.id ?? ""
+    }
+}
+
+// MARK: - Provider Tabs
+
+/// Segmented tabs over enabled providers. Single-provider installs render
+/// only one tab (still rendered for visual consistency with multi-provider).
+struct ProviderTabs: View {
+    let providers: [ProviderStatus]
+    @Binding var selectedId: String
+
+    var body: some View {
+        if providers.count <= 1 {
+            // Compact single-provider bar: show only the provider name on the
+            // left of an empty space — no segmented control needed.
+            HStack {
+                Text(providers.first?.displayName ?? "")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(VocabbyTheme.primary)
+                Spacer()
+            }
+        } else {
+            Picker("", selection: $selectedId) {
+                ForEach(providers, id: \.id) { p in
+                    Text(p.displayName).tag(p.id)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .tint(VocabbyTheme.blue)
+        }
+    }
+}
+
+// MARK: - Provider Header Card
+
+/// Provider info card: name + plan tier + last-updated + status pill.
+struct ProviderHeaderCard: View {
+    let status: ProviderStatus
+    @EnvironmentObject var quota: QuotaService
+
+    private var updatedAgo: String {
+        let secs = Int(Date().timeIntervalSince(status.lastUpdated))
         if secs < 5 { return "vừa cập nhật" }
         if secs < 60 { return "\(secs) giây trước" }
         if secs < 3600 { return "\(secs / 60) phút trước" }
         return "\(secs / 3600) giờ trước"
     }
-}
 
-/// App color palette.
-enum VocabbyTheme {
-    static let background = Color(red: 0.988, green: 0.988, blue: 0.988)   // #FCFCFC
-    static let card       = Color.white
-    static let primary    = Color(red: 0.122, green: 0.122, blue: 0.180)   // #1F1F2E navy text
-    static let secondary  = Color(red: 0.420, green: 0.447, blue: 0.502)   // #6B7280
-    static let tertiary   = Color(red: 0.620, green: 0.643, blue: 0.690)   // #9EA4AE
-    static let blue       = Color(red: 0.282, green: 0.624, blue: 0.925)   // #489FEC — bright blue (primary brand)
-    static let blueSoft   = Color(red: 0.576, green: 0.773, blue: 0.992)   // #93C5FD
-    static let yellow     = Color(red: 1.000, green: 0.804, blue: 0.298)   // #FFCD4C — bright yellow (accent)
-    static let yellowSoft = Color(red: 1.000, green: 0.902, blue: 0.612)   // #FFE69C
-    static let track      = Color(red: 0.898, green: 0.906, blue: 0.918)   // #E5E7EB
-    static let badge      = Color(red: 0.976, green: 0.980, blue: 0.984)   // #F9FAFB
-}
-
-/// Card modifier with rounded corners and subtle shadow.
-struct VocabbyCard: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(14)
-            .background(VocabbyTheme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 2)
-    }
-}
-
-extension View {
-    func vocabbyCard() -> some View { modifier(VocabbyCard()) }
-}
-
-/// Header card: logo + title + (N providers · min% · time) + status pill.
-struct HeaderCard: View {
-    let footerText: String
-    @EnvironmentObject var quota: QuotaService
-
-    private var providerCount: Int { quota.statuses.count }
-    private var errorCount: Int { quota.statuses.filter { $0.error != nil }.count }
-    private var allOK: Bool { errorCount == 0 && providerCount > 0 }
-
-    /// Minimum remaining % across every (provider × window). nil when no
-    /// quota windows have been fetched yet, or when all providers errored.
-    private var minRemaining: Int? {
-        let pcts = quota.statuses.flatMap { $0.windows.map(\.remainingPct) }
-        return pcts.isEmpty ? nil : pcts.min()
-    }
-
-    /// Subtitle body. While refreshing, replaces with a spinner hint.
-    private var subtitleText: String {
-        if providerCount == 0 { return footerText }
-        let countStr = "\(providerCount) providers"
-        if !allOK {
-            return "\(countStr) · \(errorCount) lỗi · \(footerText)"
+    private var planTier: String {
+        // Heuristic by provider id; expand when more providers are added.
+        switch status.id {
+        case "minimax": return "Token Plan"
+        case "hapo":    return "Hapo AI Hub"
+        default:        return ""
         }
-        if let m = minRemaining {
-            return "\(countStr) · \(m)% thấp nhất · \(footerText)"
-        }
-        return "\(countStr) · \(footerText)"
     }
+
+    private var hasError: Bool { status.error != nil }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
             Image("OriginalImage")
                 .resizable()
                 .interpolation(.high)
                 .frame(width: 36, height: 36)
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text("BirdNion")
-                    .font(.system(size: 15, weight: .semibold))
+                Text(status.displayName)
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(VocabbyTheme.primary)
                 HStack(spacing: 4) {
                     if quota.isRefreshing {
                         ProgressView().controlSize(.mini).tint(VocabbyTheme.blue)
                     }
-                    Text(quota.isRefreshing ? "Đang làm mới…" : subtitleText)
+                    Text(planTier.isEmpty ? updatedAgo : "\(planTier) · \(updatedAgo)")
                         .font(.system(size: 11))
                         .foregroundStyle(VocabbyTheme.secondary)
                         .lineLimit(1)
                 }
             }
             Spacer(minLength: 6)
-            StatusPill(ok: allOK, errorCount: errorCount)
+            StatusPill(ok: !hasError, errorCount: hasError ? 1 : 0)
         }
         .vocabbyCard()
     }
 }
 
-/// Pill on the right of the header — green/blue "OK" or red "! N" depending
-/// on whether any provider is currently in an error state.
-struct StatusPill: View {
-    let ok: Bool
-    let errorCount: Int
+// MARK: - Provider Card + Window Row (unchanged from before)
 
-    var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                .font(.system(size: 10, weight: .semibold))
-            Text(ok ? "OK" : "\(errorCount)")
-                .font(.system(size: 10, weight: .bold))
-                .monospacedDigit()
-        }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(ok ? VocabbyTheme.blue : Color.red)
-        .clipShape(Capsule())
-    }
-}
-
-/// Per-provider card: name + 2 WindowBlock(s) + provider actions.
+/// Per-provider card: name + windows.
 struct ProviderCard: View {
     let status: ProviderStatus
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                Circle()
-                    .fill(status.error != nil ? .red : VocabbyTheme.yellow)
-                    .frame(width: 8, height: 8)
-                Text(status.displayName)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(VocabbyTheme.primary)
-                Spacer()
-                if let err = status.error {
-                    Text(err)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.red)
-                        .lineLimit(1)
-                }
-            }
-
+        VStack(alignment: .leading, spacing: 10) {
             if let err = status.error {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10))
                         .foregroundStyle(.red)
-                    Text("Không thể tải quota")
+                    Text(err)
                         .font(.system(size: 11))
                         .foregroundStyle(.red)
+                        .lineLimit(2)
                 }
             } else {
                 ForEach(status.windows) { win in
@@ -199,31 +189,20 @@ struct ProviderCard: View {
     }
 }
 
-/// Single quota window row inside a ProviderCard.
-/// Vocabby style: 2-column header (label left, % right) + colored bar +
-/// 2-column footer (subtitle left, reset right).
+/// Single quota window row.
 struct WindowRow: View {
     let window: QuotaWindow
 
-    /// Color distinguishes the *cadence*:
-    ///   - "5 giờ" (rolling interval)  → yellow (#FFCD4C)
-    ///   - "Tuần"  (weekly)            → blue   (#489FEC)
-    /// Both rows display `remainingPct`.
     private var isBlue: Bool { window.label.contains("Tuần") }
-
     private var barColor: Color {
         isBlue ? VocabbyTheme.blue : VocabbyTheme.yellow
     }
 
-    /// Footer-left text. Prefers explicit subtitle from the provider
-    /// (e.g. Hapo's "$16.19 / $20.00"); falls back to "Còn X%".
     private var subtitleText: String {
         if let s = window.subtitle, !s.isEmpty { return s }
         return "Còn \(window.remainingPct)%"
     }
 
-    /// Footer-right text. Uses dynamic `resetDate` if the provider
-    /// supplied one; otherwise a label-keyed default.
     private var resetText: String {
         if let d = window.resetDate { return Self.formatReset(d) }
         if window.label.contains("Tuần") { return "Resets weekly" }
@@ -231,7 +210,6 @@ struct WindowRow: View {
         return ""
     }
 
-    /// "Resets in 6d 1h" / "Resets in 2h 13m" / "Resets in 45m"
     private static func formatReset(_ date: Date) -> String {
         let secs = Int(date.timeIntervalSinceNow)
         if secs <= 0 { return "Resets soon" }
@@ -279,57 +257,166 @@ struct WindowRow: View {
     }
 }
 
-/// Footer: orange pill "ĐANG DÙNG" + menu items.
-struct FooterMenu: View {
+// MARK: - Actions List
+
+/// Vertical action list (icon + label rows). CodexBar-style, matches the
+/// footer menu of the reference app instead of the compact 4-icon row.
+struct ActionsList: View {
     @EnvironmentObject var quota: QuotaService
 
     var body: some View {
-        HStack(spacing: 0) {
-            FooterMenuItem(icon: "plus.circle", label: "Add") { }
-            FooterMenuItem(icon: quota.isRefreshing ? "arrow.triangle.2.circlepath" : "arrow.clockwise",
-                           label: "Refresh",
-                           isLoading: quota.isRefreshing) {
+        VStack(spacing: 0) {
+            ActionRow(icon: quota.isRefreshing ? "arrow.triangle.2.circlepath" : "arrow.clockwise",
+                      label: "Refresh",
+                      shortcut: nil,
+                      isLoading: quota.isRefreshing) {
                 NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
             }
-            FooterMenuItem(icon: "gearshape", label: "Settings") {
+            Divider().padding(.vertical, 2)
+            ActionRow(icon: "gearshape", label: "Settings…",
+                      shortcut: "⌘,",
+                      isLoading: false) {
                 NotificationCenter.default.post(name: .openSettings, object: nil)
             }
-            FooterMenuItem(icon: "power", label: "Quit") { NSApp.terminate(nil) }
+            Divider().padding(.vertical, 2)
+            ActionRow(icon: "info.circle", label: "About BirdNion",
+                      shortcut: nil,
+                      isLoading: false) {
+                AboutPresenter.show()
+            }
+            Divider().padding(.vertical, 2)
+            ActionRow(icon: "power", label: "Quit BirdNion",
+                      shortcut: "⌘Q",
+                      isLoading: false) {
+                NSApp.terminate(nil)
+            }
         }
+        .background(VocabbyTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
-struct FooterMenuItem: View {
+struct ActionRow: View {
     let icon: String
     let label: String
+    var shortcut: String? = nil
     var isLoading: Bool = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(VocabbyTheme.blue)
-                        .frame(height: 16)
-                } else {
-                    Image(systemName: icon)
-                        .font(.system(size: 16))
-                        .foregroundStyle(VocabbyTheme.secondary)
-                        .frame(height: 16)
+            HStack(spacing: 10) {
+                ZStack {
+                    if isLoading {
+                        ProgressView().controlSize(.small).tint(VocabbyTheme.blue)
+                    } else {
+                        Image(systemName: icon)
+                            .font(.system(size: 13))
+                            .foregroundStyle(VocabbyTheme.secondary)
+                    }
                 }
+                .frame(width: 16, height: 16)
                 Text(label)
-                    .font(.system(size: 9))
-                    .foregroundStyle(VocabbyTheme.tertiary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(VocabbyTheme.primary)
+                Spacer()
+                if let s = shortcut {
+                    Text(s)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(VocabbyTheme.tertiary)
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
     }
 }
+
+// MARK: - Status Pill
+
+/// Pill — blue "OK" or red "! N" depending on whether any provider is
+/// currently in an error state.
+struct StatusPill: View {
+    let ok: Bool
+    let errorCount: Int
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                .font(.system(size: 10, weight: .semibold))
+            Text(ok ? "OK" : "\(errorCount)")
+                .font(.system(size: 10, weight: .bold))
+                .monospacedDigit()
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(ok ? VocabbyTheme.blue : Color.red)
+        .clipShape(Capsule())
+    }
+}
+
+// MARK: - About
+
+/// Shows a simple About panel via NSAlert. Avoids creating a dedicated
+/// SwiftUI sheet for what amounts to a static info blob.
+enum AboutPresenter {
+    static func show() {
+        let bundle = Bundle.main
+        let version = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+
+        let alert = NSAlert()
+        alert.messageText = "BirdNion"
+        alert.informativeText = """
+        Version \(version) (\(build))
+
+        macOS menu bar app for tracking AI provider quota.
+        Bright blue, bright yellow, near-white.
+        """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Đóng")
+        alert.runModal()
+    }
+}
+
+// MARK: - Theme
+
+/// App color palette.
+enum VocabbyTheme {
+    static let background = Color(red: 0.988, green: 0.988, blue: 0.988)   // #FCFCFC
+    static let card       = Color.white
+    static let primary    = Color(red: 0.122, green: 0.122, blue: 0.180)   // #1F1F2E
+    static let secondary  = Color(red: 0.420, green: 0.447, blue: 0.502)   // #6B7280
+    static let tertiary   = Color(red: 0.620, green: 0.643, blue: 0.690)   // #9EA4AE
+    static let blue       = Color(red: 0.282, green: 0.624, blue: 0.925)   // #489FEC
+    static let blueSoft   = Color(red: 0.576, green: 0.773, blue: 0.992)   // #93C5FD
+    static let yellow     = Color(red: 1.000, green: 0.804, blue: 0.298)   // #FFCD4C
+    static let yellowSoft = Color(red: 1.000, green: 0.902, blue: 0.612)   // #FFE69C
+    static let track      = Color(red: 0.898, green: 0.906, blue: 0.918)   // #E5E7EB
+    static let badge      = Color(red: 0.976, green: 0.980, blue: 0.984)   // #F9FAFB
+}
+
+// MARK: - Card modifier
+
+struct VocabbyCard: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(12)
+            .background(VocabbyTheme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 1)
+    }
+}
+
+extension View {
+    func vocabbyCard() -> some View { modifier(VocabbyCard()) }
+}
+
+// MARK: - Notifications
 
 extension Notification.Name {
     static let aistatusbarRefresh = Notification.Name("com.local.birdnion.refresh")

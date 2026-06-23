@@ -30,7 +30,7 @@ struct PopoverView: View {
             }
             Group {
                 switch section {
-                case .quota:     QuotaPanel()
+                case .quota:     QuotaOverview()
                 case .providers: ProvidersSection()
                 case .config:    ConfigPanel()
                 }
