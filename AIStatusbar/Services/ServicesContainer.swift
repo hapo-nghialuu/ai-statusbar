@@ -8,11 +8,23 @@ final class ServicesContainer: ObservableObject {
     let keychain: KeychainService
     let configService: ConfigService
     let quotaService: QuotaService
+    let settings: SettingsStore
+
+    /// Process-wide instance. Set by `AppDelegate.register(services:)` from
+    /// the App's `init` so the Settings scene can use the same services as
+    /// AppDelegate. Reading before registration is a programmer error.
+    static private(set) var shared: ServicesContainer?
+
+    static func register(services: ServicesContainer) {
+        shared = services
+    }
 
     init() {
         let ks = KeychainService()
         self.keychain = ks
         self.configService = ConfigService()
+        let store = SettingsStore()
+        self.settings = store
 
         // Build providers from providers.json so each entry uses its real
         // baseURL / authHeaderTemplate. Falls back to the default document
@@ -54,7 +66,9 @@ final class ServicesContainer: ObservableObject {
                 )
             ]
         }
-        self.quotaService = QuotaService(providers: providers, interval: 120)
+        self.quotaService = QuotaService(providers: providers, interval: store.refreshIntervalSeconds)
+        // Bind so settings.pushRefreshInterval() can push changes into the loop.
+        store.bind(quotaService: quotaService)
     }
 
     func start() {

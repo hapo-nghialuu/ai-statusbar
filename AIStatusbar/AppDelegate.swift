@@ -14,7 +14,14 @@ final class DropdownPanel: NSPanel {
 /// icon is a dynamic NSImage redrawn from the latest QuotaService statuses.
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let services = ServicesContainer()
+    /// Use the ServicesContainer already registered by `AIStatusbarApp.init`
+    /// so the Settings scene and AppDelegate share the exact same instances.
+    var services: ServicesContainer {
+        ServicesContainer.shared ?? {
+            assertionFailure("ServicesContainer not registered; check AIStatusbarApp.init")
+            return ServicesContainer()
+        }()
+    }
     private var statusItem: NSStatusItem!
     private var panel: DropdownPanel!
     private var hostingController: NSHostingController<AnyView>!
@@ -264,15 +271,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         button.title = " \(slot.remainingPct)%"
     }
 
-    // Cmd+, / menu "Settings" — open the panel (if closed) and switch to the
-    // Providers section inline. PopoverView listens for `.openSettings`.
+    // Cmd+, / menu "Settings" — open the native Settings window centered on
+    // screen. AppKit dismisses the popover automatically when the new key
+    // window steals focus.
     @objc func openSettings(_ sender: AnyObject?) {
-        if !panel.isVisible {
-            showPanel()
-        }
-        DispatchQueue.main.async {
-            NotificationCenter.default.post(name: .openSettings, object: nil)
-        }
+        NSApp.activate(ignoringOtherApps: true)
+        _ = NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
     }
 
     func applicationWillTerminate(_ notification: Notification) {

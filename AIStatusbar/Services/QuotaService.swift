@@ -9,12 +9,18 @@ final class QuotaService: ObservableObject {
     @Published private(set) var isRefreshing: Bool = false
 
     private(set) var providers: [QuotaProvider] = []
-    private let interval: TimeInterval
+    private var interval: TimeInterval
     private var loopTask: Task<Void, Never>?
 
     init(providers: [QuotaProvider] = [], interval: TimeInterval = 120) {
         self.providers = providers
         self.interval = interval
+    }
+
+    /// Update the polling interval. The running loop reads `self.interval`
+    /// fresh on every iteration, so the change applies at the next sleep.
+    func setInterval(_ newInterval: TimeInterval) {
+        interval = newInterval
     }
 
     func add(_ p: QuotaProvider) {

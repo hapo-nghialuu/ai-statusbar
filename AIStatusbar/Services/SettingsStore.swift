@@ -1,0 +1,108 @@
+import SwiftUI
+import ServiceManagement
+
+/// Central user-preferences store. Each property uses `@AppStorage` so SwiftUI
+/// views bind directly and values persist in UserDefaults automatically.
+///
+/// Real wiring: applyLanguage (writes AppleLanguages), setLaunchAtLogin
+/// (SMAppService.mainApp), pushRefreshInterval (QuotaService). The remaining
+/// 5 settings are persisted; their UI controls are wired in the pane views
+/// (YAGNI — they have no code that reads them yet).
+@MainActor
+final class SettingsStore: ObservableObject {
+    enum Language: String, CaseIterable, Identifiable {
+        case system = ""        // empty string = use AppleLanguages as-is
+        case english = "en"
+        case vietnamese = "vi"
+
+        var id: String { rawValue }
+        var displayName: String {
+            switch self {
+            case .system: "Theo hệ thống"
+            case .english: "English"
+            case .vietnamese: "Tiếng Việt"
+            }
+        }
+    }
+
+    enum RefreshFrequency: Double, CaseIterable, Identifiable {
+        case oneMinute = 60
+        case twoMinutes = 120
+        case fiveMinutes = 300
+        case fifteenMinutes = 900
+        case oneHour = 3600
+
+        var id: Double { rawValue }
+        var displayName: String {
+            switch self {
+            case .oneMinute: "1 phút"
+            case .twoMinutes: "2 phút"
+            case .fiveMinutes: "5 phút"
+            case .fifteenMinutes: "15 phút"
+            case .oneHour: "1 giờ"
+            }
+        }
+    }
+
+    @AppStorage("appLanguage") var appLanguage: String = Language.system.rawValue
+    @AppStorage("launchAtLogin") var launchAtLogin: Bool = false
+    @AppStorage("refreshIntervalSeconds") var refreshIntervalSeconds: Double = RefreshFrequency.twoMinutes.rawValue
+    @AppStorage("debugMenuEnabled") var debugMenuEnabled: Bool = false
+    @AppStorage("statusChecksEnabled") var statusChecksEnabled: Bool = true
+    @AppStorage("sessionQuotaNotificationsEnabled") var sessionQuotaNotificationsEnabled: Bool = true
+    @AppStorage("quotaWarningNotificationsEnabled") var quotaWarningNotificationsEnabled: Bool = false
+    @AppStorage("hidePersonalInfo") var hidePersonalInfo: Bool = false
+    @AppStorage("mergeIcons") var mergeIcons: Bool = true
+    @AppStorage("switcherShowsIcons") var switcherShowsIcons: Bool = true
+
+    var language: Language {
+        get { Language(rawValue: appLanguage) ?? .system }
+        set { appLanguage = newValue.rawValue }
+    }
+
+    var refreshFrequency: RefreshFrequency {
+        get { RefreshFrequency(rawValue: refreshIntervalSeconds) ?? .twoMinutes }
+        set { refreshIntervalSeconds = newValue.rawValue }
+    }
+
+    private weak var quotaService: QuotaService?
+
+    func bind(quotaService: QuotaService) {
+        self.quotaService = quotaService
+        quotaService.setInterval(refreshIntervalSeconds)
+    }
+
+    func pushRefreshInterval() {
+        quotaService?.setInterval(refreshIntervalSeconds)
+    }
+
+    /// Writes the language preference into AppleLanguages so the next launch
+    /// picks it up. macOS applies locale changes at process start, so this
+    /// only takes effect after the app restarts (matches CodexBar behavior).
+    func applyLanguage() {
+        let key = "AppleLanguages"
+        if appLanguage.isEmpty {
+            UserDefaults.standard.removeObject(forKey: key)
+        } else {
+            UserDefaults.standard.set([appLanguage], forKey: key)
+        }
+    }
+
+    /// Registers/unregisters the app as a login item using the modern
+    /// SMAppService.mainApp API (macOS 13+). Replaces the deprecated
+    /// SMLoginItemSetEnabled which silently no-ops on signed bundles.
+    func applyLaunchAtLogin() {
+        let service = SMAppService.mainApp
+        do {
+            if launchAtLogin {
+                if service.status != .enabled { try service.register() }
+            } else {
+                if service.status == .enabled { try service.unregister() }
+            }
+        } catch {
+            // Surface to console — SwiftUI binding still reflects user intent
+            // even if the OS rejected the request (e.g. not signed).
+            print("SMAppService error: \(error)")
+        }
+    }
+}
