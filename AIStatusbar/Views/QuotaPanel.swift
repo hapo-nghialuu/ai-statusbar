@@ -24,7 +24,7 @@ struct QuotaOverview: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     // Default selection: first provider (kept across refreshes
                     // when the same id is still present).
                     let selected = effectiveSelectedId()
@@ -37,7 +37,7 @@ struct QuotaOverview: View {
                     )
                     if let s = quota.statuses.first(where: { $0.id == selected })
                         ?? quota.statuses.first {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 6) {
                             ProviderHeaderCard(status: s)
                             ProviderCard(status: s)
                         }
@@ -47,8 +47,8 @@ struct QuotaOverview: View {
                     Spacer(minLength: 0)
                     ActionsList()
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
             }
         }
         .onAppear {
@@ -108,7 +108,7 @@ struct ProviderTabs: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
                     providerLogoView(for: p.id)
-                        .frame(width: 17, height: 17)
+                        .frame(width: 22, height: 22)
                     Text(p.displayName)
                         .font(.system(size: 11, weight: .semibold))
                 }
@@ -116,7 +116,7 @@ struct ProviderTabs: View {
                     Text(s)
                         .font(.system(size: 10, weight: .medium).monospacedDigit())
                         .opacity(0.85)
-                        .padding(.leading, 16) // align under the name, past the logo
+                        .padding(.leading, 22) // align under the name, past the 22pt logo
                 }
             }
             .padding(.horizontal, 10)
