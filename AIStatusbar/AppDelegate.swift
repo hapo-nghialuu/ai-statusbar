@@ -341,7 +341,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .environmentObject(self.services.configService)
                 .environmentObject(self.services.quotaService)
         )
-        host.sizingOptions = [.preferredContentSize]
+        // Keep sizing OFF: with `.preferredContentSize` the hosting controller
+        // drives the window size from the SwiftUI content, which re-enters
+        // NSISEngine through updateAnimatedWindowSize and recurses (the crash we
+        // chased earlier). With an empty set the window owns its size and we can
+        // safely use grouped Form styling inside.
+        host.sizingOptions = []
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 546, height: 620),
@@ -349,9 +354,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered, defer: false)
         window.title = "AIStatusbar"
         window.contentViewController = host
+        // Force the content size explicitly: with sizingOptions = [] the
+        // controller reports a tiny fitting size (the root view fills its
+        // parent and has no intrinsic size), so without this the window
+        // collapses to ~350×100.
+        window.setContentSize(NSSize(width: 546, height: 620))
         window.isReleasedWhenClosed = false
         window.center()
-        window.setFrameAutosaveName("AIStatusbarSettingsWindow")
         self.settingsWindow = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

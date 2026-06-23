@@ -31,11 +31,16 @@ struct SettingsSceneRoot: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        // Use ideal-only sizing so AppKit doesn't force a re-layout every
-        // pass. The original .frame(width:height:) and the .frame(minWidth:
-        // minHeight:) variants both triggered an NSISEngine recursion loop
-        // because updateAnimatedWindowSize kept retriggering windowDidLayout.
-        .frame(idealWidth: 546, idealHeight: 620)
+        // Fill the host window (its size is owned by AppDelegate's NSWindow, so
+        // we no longer set an ideal frame here).
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Grouped Form styling applied once here flows to every pane's Form via
+        // the environment — gives the inset "card" look from the CodexBar mockup.
+        .formStyle(.grouped)
+        // Opaque backing so AppKit always has something to clear to. Without it,
+        // the panes' .scrollContentBackground(.hidden) leaves the NSHostingView
+        // transparent and old text smears at the window's left edge on resize.
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             if !visibleTabs.contains(selected) { selected = .general }
         }
