@@ -36,7 +36,11 @@ struct PopoverView: View {
                 }
             }
         }
-        .frame(width: 420, height: 480)
+        // Width is fixed; height is left unconstrained so the hosting
+        // controller reports its fitting height and the popover shrinks to
+        // hug the content. The fixed 480 height used to leave dead space
+        // below the cards (a Spacer absorbed it into a visible gap).
+        .frame(width: 420)
         .background(VocabbyTheme.background)
         .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
             withAnimation(.easeInOut(duration: 0.15)) { section = .providers }

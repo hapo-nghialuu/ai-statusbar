@@ -13,8 +13,7 @@ struct QuotaOverview: View {
     @State private var selectedProviderId: String? = nil
 
     var body: some View {
-        ZStack {
-            VocabbyTheme.background.ignoresSafeArea()
+        Group {
             if quota.statuses.isEmpty {
                 VStack(spacing: 8) {
                     ProgressView().controlSize(.small).tint(VocabbyTheme.blue)
@@ -22,9 +21,9 @@ struct QuotaOverview: View {
                         .font(.system(size: 12))
                         .foregroundStyle(VocabbyTheme.secondary)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, minHeight: 160)
             } else {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     // Default selection: first provider (kept across refreshes
                     // when the same id is still present).
                     let selected = effectiveSelectedId()
@@ -37,20 +36,20 @@ struct QuotaOverview: View {
                     )
                     if let s = quota.statuses.first(where: { $0.id == selected })
                         ?? quota.statuses.first {
-                        VStack(alignment: .leading, spacing: 6) {
-                            ProviderHeaderCard(status: s)
-                            ProviderCard(status: s)
-                        }
+                        ProviderHeaderCard(status: s)
+                        ProviderCard(status: s)
                     }
-                    // Spacer pushes the action list to the bottom of the
-                    // popover so cards above hug their content with no gap.
-                    Spacer(minLength: 0)
+                    // No Spacer: the view hugs its content and the popover
+                    // auto-sizes to this height, so the action list sits
+                    // directly under the cards with no dead gap.
                     ActionsList()
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
             }
         }
+        .frame(maxWidth: .infinity)
+        .background(VocabbyTheme.background)
         .onAppear {
             if selectedProviderId == nil,
                let first = quota.statuses.first {

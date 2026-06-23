@@ -40,6 +40,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.behavior = .transient
         popover.animates = true
+        // Initial size only — the hosting controller's sizingOptions below
+        // makes the popover auto-resize to the SwiftUI content's fitting
+        // height (width stays 420), so it hugs the cards with no dead gap.
         popover.contentSize = NSSize(width: 420, height: 480)
         let host = NSHostingController(
             rootView: PopoverView()
@@ -47,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .environmentObject(services.configService)
                 .environmentObject(services.keychain)
         )
+        host.sizingOptions = [.preferredContentSize]
         popover.contentViewController = host
         popover.delegate = self
         // Drop the triangular arrow that NSPopover draws toward its anchor.
