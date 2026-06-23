@@ -13,7 +13,20 @@ struct SettingsWindow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 4) {
+            HStack(spacing: 8) {
+                Image("OriginalImage")
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("AI Statusbar")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text("Quota + Claude Config")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
                 Picker("", selection: $section) {
                     Text("Providers").tag(Section.providers)
                     Text("Claude Config").tag(Section.config)
@@ -21,8 +34,7 @@ struct SettingsWindow: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .controlSize(.small)
-                .frame(width: 220)
-                Spacer()
+                .frame(width: 200)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
