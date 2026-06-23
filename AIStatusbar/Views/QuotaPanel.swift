@@ -190,7 +190,7 @@ struct ProviderHeaderCard: View {
         // Heuristic by provider id; expand when more providers are added.
         switch status.id {
         case "minimax": return "Token Plan"
-        case "hapo":    return "Hapo AI Hub"
+        case "hapo":    return "AI Hub"
         default:        return ""
         }
     }
@@ -202,8 +202,8 @@ struct ProviderHeaderCard: View {
             Image("ProviderLogo")
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 50, height: 50)
-                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .frame(width: 55, height: 55)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(status.displayName)
                     .font(.system(size: 14, weight: .semibold))
