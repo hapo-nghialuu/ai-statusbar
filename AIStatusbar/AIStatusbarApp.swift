@@ -31,7 +31,9 @@ struct AIStatusbarApp: App {
         .windowStyle(.hiddenTitleBar)
 
         // Native macOS Settings scene — system routes Cmd+, here, AppKit
-        // centers it on the active screen.
+        // centers it on the active screen. `defaultSize` is consumed once at
+        // first layout; we don't `.frame(width:height:)` inside the scene
+        // because that combination caused an NSISEngine recursion loop.
         Settings {
             SettingsSceneRoot()
                 .environmentObject(settings)

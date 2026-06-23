@@ -31,7 +31,11 @@ struct SettingsSceneRoot: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(width: 546, height: 662)
+        // Use min/ideal width so AppKit picks the size once at first layout
+        // (via the scene's defaultSize), but doesn't force a hard constraint
+        // every pass — that combination caused an NSISEngine recursion
+        // loop in the original implementation.
+        .frame(minWidth: 540, idealWidth: 546, minHeight: 480, idealHeight: 620)
         .onAppear {
             if !visibleTabs.contains(selected) { selected = .general }
         }
