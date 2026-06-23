@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+*.swp
+*~
+.Spotlight-V100
+.Trashes
+
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+xcuserdata/
+*.xcuserstate
+
+# Local agent config (Claude Code / CafeKit runtime — not part of the app)
+.claude/
+
+# Build artifacts outside project tree
+/tmp/aistatusbar-release/

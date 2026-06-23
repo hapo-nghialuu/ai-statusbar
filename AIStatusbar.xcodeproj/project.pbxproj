@@ -1,0 +1,516 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AAAA0001000000000000B001 /* AIStatusbarApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA0002000000000000F001 /* AIStatusbarApp.swift */; };
+		BBBB0001000000000000B001 /* ProviderStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB0002000000000000F001 /* ProviderStatus.swift */; };
+		BBBB0003000000000000B002 /* QuotaProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB0004000000000000F002 /* QuotaProvider.swift */; };
+		CCCC0001000000000000B001 /* ProviderStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC0002000000000000F001 /* ProviderStatusTests.swift */; };
+		CCCC0003000000000000B002 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC0004000000000000F002 /* KeychainServiceTests.swift */; };
+		CCCC0005000000000000B003 /* MiniMaxProviderParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC0006000000000000F003 /* MiniMaxProviderParserTests.swift */; };
+		CCCC0007000000000000B004 /* HapoHubProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC0008000000000000F004 /* HapoHubProviderTests.swift */; };
+		CCCC0009000000000000B005 /* QuotaServicePollingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000A000000000000F005 /* QuotaServicePollingTests.swift */; };
+		CCCC000B000000000000B006 /* ConfigServiceAtomicWriteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000C000000000000F006 /* ConfigServiceAtomicWriteTests.swift */; };
+		CCCC000D000000000000B007 /* StubURLProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000E000000000000F007 /* StubURLProtocol.swift */; };
+		CCCC000F000000000000B008 /* AIStatusbarTests.xctest in Frameworks */ = {isa = PBXBuildFile; fileRef = CCCC001000000000000F008 /* AIStatusbarTests.xctest */; };
+		DDDD0001000000000000B001 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0002000000000000F001 /* KeychainService.swift */; };
+		DDDD0003000000000000B002 /* ConfigService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0004000000000000F002 /* ConfigService.swift */; };
+		DDDD0005000000000000B003 /* QuotaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0006000000000000F003 /* QuotaService.swift */; };
+		DDDD0007000000000000B004 /* ProvidersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0008000000000000F004 /* ProvidersStore.swift */; };
+		DDDD0009000000000000B005 /* MiniMaxProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000A000000000000F005 /* MiniMaxProvider.swift */; };
+		DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000C000000000000F006 /* HapoHubConfig.swift */; };
+		DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000E000000000000F007 /* HapoHubProvider.swift */; };
+		DDDD000F0000000000B008 /* MockHapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0010000000000000F008 /* MockHapoHubProvider.swift */; };
+		DDDD00110000000000B009 /* HapoHubFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0012000000000000F009 /* HapoHubFactory.swift */; };
+		DDDD00130000000000B00A /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0014000000000000F00A /* PopoverView.swift */; };
+		DDDD00150000000000B00B /* MenuBarIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0016000000000000F00B /* MenuBarIcon.swift */; };
+		DDDD001B0000000000B00E /* QuotaPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD001C000000000000F00E /* QuotaPanel.swift */; };
+		DDDD001D0000000000B00F /* ConfigPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD001E000000000000F00F /* ConfigPanel.swift */; };
+		EEEE0001000000000000B001 /* SettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE0002000000000000F001 /* SettingsWindow.swift */; };
+
+		EEEE0004000000000000B001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEEE0003000000000000F001 /* Assets.xcassets */; };
+		FFFF0001000000000000B001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF0002000000000000F001 /* AppDelegate.swift */; };
+		FFFF0003000000000000B002 /* ServicesContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF0004000000000000F002 /* ServicesContainer.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CCCC0011000000000000PXY1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAAA0010000000000000P001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AAAA000E000000000000T001;
+			remoteInfo = AIStatusbar;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		AAAA0003000000000000F002 /* AIStatusbar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIStatusbar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAAA0002000000000000F001 /* AIStatusbarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarApp.swift; sourceTree = "<group>"; };
+		AAAA0004000000000000F003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BBBB0002000000000000F001 /* ProviderStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderStatus.swift; sourceTree = "<group>"; };
+		BBBB0004000000000000F002 /* QuotaProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaProvider.swift; sourceTree = "<group>"; };
+		CCCC0002000000000000F001 /* ProviderStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/ProviderStatusTests.swift; sourceTree = "<group>"; };
+		CCCC0004000000000000F002 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/KeychainServiceTests.swift; sourceTree = "<group>"; };
+		CCCC0006000000000000F003 /* MiniMaxProviderParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/MiniMaxProviderParserTests.swift; sourceTree = "<group>"; };
+		CCCC0008000000000000F004 /* HapoHubProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/HapoHubProviderTests.swift; sourceTree = "<group>"; };
+		CCCC000A000000000000F005 /* QuotaServicePollingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/QuotaServicePollingTests.swift; sourceTree = "<group>"; };
+		CCCC000C000000000000F006 /* ConfigServiceAtomicWriteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/ConfigServiceAtomicWriteTests.swift; sourceTree = "<group>"; };
+		CCCC000E000000000000F007 /* StubURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbarTests/StubURLProtocol.swift; sourceTree = "<group>"; };
+		CCCC0010000000000000F008 /* AIStatusbarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIStatusbarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DDDD0002000000000000F001 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/KeychainService.swift; sourceTree = "<group>"; };
+		DDDD0004000000000000F002 /* ConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/ConfigService.swift; sourceTree = "<group>"; };
+		DDDD0006000000000000F003 /* QuotaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/QuotaService.swift; sourceTree = "<group>"; };
+		DDDD0008000000000000F004 /* ProvidersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/ProvidersStore.swift; sourceTree = "<group>"; };
+		DDDD000A000000000000F005 /* MiniMaxProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/MiniMaxProvider.swift; sourceTree = "<group>"; };
+		DDDD000C000000000000F006 /* HapoHubConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/HapoHubConfig.swift; sourceTree = "<group>"; };
+		DDDD000E000000000000F007 /* HapoHubProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/HapoHubProvider.swift; sourceTree = "<group>"; };
+		DDDD0010000000000000F008 /* MockHapoHubProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/MockHapoHubProvider.swift; sourceTree = "<group>"; };
+		DDDD0012000000000000F009 /* HapoHubFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/HapoHubFactory.swift; sourceTree = "<group>"; };
+		DDDD0014000000000000F00A /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/PopoverView.swift; sourceTree = "<group>"; };
+		DDDD0016000000000000F00B /* MenuBarIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/MenuBarIcon.swift; sourceTree = "<group>"; };
+		DDDD001C000000000000F00E /* QuotaPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/QuotaPanel.swift; sourceTree = "<group>"; };
+		DDDD001E000000000000F00F /* ConfigPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/ConfigPanel.swift; sourceTree = "<group>"; };
+		EEEE0002000000000000F001 /* SettingsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Views/SettingsWindow.swift; sourceTree = "<group>"; };
+
+		EEEE0003000000000000F001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+
+		FFFF0002000000000000F001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+
+		FFFF0004000000000000F002 /* ServicesContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServicesContainer.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AAAA0005000000000000B002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CCCC0012000000000000BF01 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CCCC000F000000000000B008 /* AIStatusbarTests.xctest in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CCCC0014000000000000BS01 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CCCC0001000000000000B001 /* ProviderStatusTests.swift in Sources */,
+				CCCC0003000000000000B002 /* KeychainServiceTests.swift in Sources */,
+				CCCC0005000000000000B003 /* MiniMaxProviderParserTests.swift in Sources */,
+				CCCC0007000000000000B004 /* HapoHubProviderTests.swift in Sources */,
+				CCCC0009000000000000B005 /* QuotaServicePollingTests.swift in Sources */,
+				CCCC000B0000000000B006 /* ConfigServiceAtomicWriteTests.swift in Sources */,
+				CCCC000D000000000000B007 /* StubURLProtocol.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+
+/* Begin PBXResourcesBuildPhase section */
+		EEEE0005000000000000BR01 /* Resources */ = {
+		isa = PBXResourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			EEEE0004000000000000B001 /* Assets.xcassets in Resources */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXGroup section */
+		AAAA0006000000000000G001 /* Root */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA0007000000000000G002 /* AIStatusbar */,
+				B0C82601EFFB44D98456A87DF3DD369B /* AIStatusbarTests */,
+				AAAA0008000000000000G003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AAAA0007000000000000G002 /* AIStatusbar */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA0002000000000000F001 /* AIStatusbarApp.swift */,
+			FFFF0002000000000000F001 /* AppDelegate.swift */,
+				AAAA0004000000000000F003 /* Info.plist */,
+				AAAA0009000000000000G004 /* Views */,
+				AAAA000A000000000000G005 /* Services */,
+				AAAA000B000000000000G006 /* Models */,
+				AAAA000C000000000000G007 /* Providers */,
+				AAAA000D000000000000G008 /* Resources */,
+			);
+			path = AIStatusbar;
+			sourceTree = "<group>";
+		};
+		AAAA0008000000000000G003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA0003000000000000F002 /* AIStatusbar.app */,
+				CCCC0010000000000000F008 /* AIStatusbarTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AAAA0009000000000000G004 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		AAAA000A000000000000G005 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				FFFF0004000000000000F002 /* ServicesContainer.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		AAAA000B000000000000G006 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BBBB0002000000000000F001 /* ProviderStatus.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AAAA000C000000000000G007 /* Providers */ = {
+			isa = PBXGroup;
+			children = (
+				BBBB0004000000000000F002 /* QuotaProvider.swift */,
+			);
+			path = Providers;
+			sourceTree = "<group>";
+		};
+		AAAA000D000000000000G008 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AAAA000E000000000000T001 /* AIStatusbar */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AAAA0015000000000000CL002 /* Build configuration list for PBXNativeTarget "AIStatusbar" */;
+			buildPhases = (
+				AAAA0005000000000000B002 /* Frameworks */,
+				EEEE0005000000000000BR01 /* Resources */,
+				AAAA000F000000000000B003 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AIStatusbar;
+			productName = AIStatusbar;
+			productReference = AAAA0003000000000000F002 /* AIStatusbar.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXNativeTarget section */
+		CCCC0013000000000000T002 /* AIStatusbarTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CCCC0018000000000000CL003 /* Build configuration list for PBXNativeTarget "AIStatusbarTests" */;
+			buildPhases = (
+				CCCC0012000000000000BF01 /* Frameworks */,
+				CCCC0014000000000000BS01 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CCCC0015000000000000DT01 /* PBXTargetDependency */,
+			);
+			name = AIStatusbarTests;
+			productName = AIStatusbarTests;
+			productReference = CCCC0010000000000000F008 /* AIStatusbarTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAAA0010000000000000P001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					AAAA000E000000000000T001 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+				};
+			};
+			buildConfigurationList = AAAA0011000000000000CL001 /* Build configuration list for PBXProject "AIStatusbar" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AAAA0006000000000000G001;
+			productRefGroup = AAAA0008000000000000G003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AAAA000E000000000000T001 /* AIStatusbar */,
+				CCCC0013000000000000T002 /* AIStatusbarTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AAAA000F000000000000B003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAAA0001000000000000B001 /* AIStatusbarApp.swift in Sources */,
+				BBBB0001000000000000B001 /* ProviderStatus.swift in Sources */,
+				BBBB0003000000000000B002 /* QuotaProvider.swift in Sources */,
+				DDDD0001000000000000B001 /* KeychainService.swift in Sources */,
+				DDDD0003000000000000B002 /* ConfigService.swift in Sources */,
+				DDDD0005000000000000B003 /* QuotaService.swift in Sources */,
+				DDDD0007000000000000B004 /* ProvidersStore.swift in Sources */,
+				DDDD0009000000000000B005 /* MiniMaxProvider.swift in Sources */,
+				DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */,
+				DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */,
+				DDDD000F0000000000B008 /* MockHapoHubProvider.swift in Sources */,
+				DDDD00110000000000B009 /* HapoHubFactory.swift in Sources */,
+				DDDD00130000000000B00A /* PopoverView.swift in Sources */,
+				DDDD00150000000000B00B /* MenuBarIcon.swift in Sources */,
+				DDDD00170000000000B00C /* QuotaBar.swift in Sources */,
+				DDDD00190000000000B00D /* ProviderRow.swift in Sources */,
+				DDDD001B0000000000B00E /* QuotaPanel.swift in Sources */,
+				DDDD001D0000000000B00F /* ConfigPanel.swift in Sources */,
+				EEEE0001000000000000B001 /* SettingsWindow.swift in Sources */,
+				FFFF0001000000000000B001 /* AppDelegate.swift in Sources */,
+				FFFF0003000000000000B002 /* ServicesContainer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AAAA0012000000000000C001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AAAA0013000000000000C002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AAAA0016000000000000C003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AIStatusbar/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Statusbar";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.local.aistatusbar";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AAAA0017000000000000C004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AIStatusbar/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Statusbar";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.local.aistatusbar";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AAAA0011000000000000CL001 /* Build configuration list for PBXProject "AIStatusbar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA0012000000000000C001 /* Debug */,
+				AAAA0013000000000000C002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AAAA0015000000000000CL002 /* Build configuration list for PBXNativeTarget "AIStatusbar" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AAAA0016000000000000C003 /* Debug */,
+				AAAA0017000000000000C004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCBuildConfiguration section */
+		CCCC0016000000000000TC01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_MODULE_NAME = AIStatusbarTests;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				PRODUCT_NAME = AIStatusbarTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.local.aistatusbar.tests";
+			};
+			name = Debug;
+		};
+		CCCC0017000000000000TC02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CCCC0018000000000000CL003 /* Build configuration list for PBXNativeTarget "AIStatusbarTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CCCC0016000000000000TC01 /* Debug */,
+				CCCC0017000000000000TC02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AAAA0010000000000000P001 /* Project object */;
+}

@@ -1,0 +1,271 @@
+{
+  "feature_name": "ai-statusbar",
+  "created_at": "2026-06-23T04:38:38Z",
+  "updated_at": "2026-06-23T05:45:00Z",
+  "language": "en",
+  "status": "done",
+  "phase": "validated",
+  "current_phase": "validate",
+  "priority": "P2",
+  "effort": null,
+  "tags": [
+    "macos",
+    "menu-bar",
+    "swift",
+    "swiftui",
+    "quota-tracking",
+    "claude-code"
+  ],
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "scope_lock": {
+    "source": "Build macOS menu bar app (Swift+SwiftUI, MenuBarExtra) that tracks AI quota from 2 providers (MiniMax /v1/token_plan/remains + Hapo Hub <HAPO_HOST>) and edits Claude Code global config (~/.claude/settings.json). Personal use, no code signing.",
+    "in_scope": [
+      "Native macOS menu bar app shell (MenuBarExtra) with popover UI",
+      "QuotaProvider protocol with 2 built-in adapters: MiniMaxProvider, HapoHubProvider",
+      "QuotaService: 60s polling, cache, parallel fetch, error isolation",
+      "ConfigService: read/write global ~/.claude/settings.json with 3-deep ring .bak backup",
+      "Settings sheet: per-provider token entry, enable/disable toggle, persists to providers.json with atomic write",
+      "Keychain storage for provider tokens AND env.ANTHROPIC_API_KEY (no plaintext on disk; settings.json uses KEYCHAIN_REF placeholder for ANTHROPIC_API_KEY)",
+      "API key masking in UI (fe_oa_\u2022\u2022\u2022\u20224a8)",
+      "Post-save banner reminding user to restart Claude Code",
+      "xcodebuild produces a runnable .app"
+    ],
+    "out_of_scope": [
+      "Code signing / notarization / distribution",
+      "Multi-user accounts",
+      "Auto-update mechanism",
+      "Editing Claude Code hooks (view-only in MVP)",
+      "Per-project ~/.claude/projects/<id>/ settings.json editing (v2 \u2014 see decision register)",
+      "Generic JSON-field editor (use typed form fields only)",
+      "Additional providers beyond MiniMax and Hapo Hub (extend later via protocol)"
+    ],
+    "expansion_policy": "requires-user-approval"
+  },
+  "dependencies": {
+    "blockedBy": [],
+    "blocks": []
+  },
+  "task_files": [
+    "tasks/task-R0-01-xcode-scaffold.md",
+    "tasks/task-R0-02-keychain-service.md",
+    "tasks/task-R0-03-models-and-protocol.md",
+    "tasks/task-R1-01-minimax-provider.md",
+    "tasks/task-R1-02-hapo-hub-provider.md",
+    "tasks/task-R1-03-quota-service.md",
+    "tasks/task-R2-01-popover-shell.md",
+    "tasks/task-R2-02-quota-panel.md",
+    "tasks/task-R2-03-config-panel.md",
+    "tasks/task-R2-04-settings-provider-mgmt.md",
+    "tasks/task-R3-01-config-service.md",
+    "tasks/task-R3-02-build-and-smoke.md"
+  ],
+  "task_registry": {
+    "tasks/task-R0-01-xcode-scaffold.md": {
+      "id": "R0-01",
+      "title": "Xcode scaffold",
+      "status": "done",
+      "dependencies": [],
+      "blocker": null,
+      "started_at": "2026-06-23T05:19:00Z",
+      "completed_at": "2026-06-23T05:19:35Z",
+      "last_updated_at": "2026-06-23T05:19:35Z"
+    },
+    "tasks/task-R0-02-keychain-service.md": {
+      "id": "R0-02",
+      "title": "Keychain service",
+      "status": "done",
+      "dependencies": [],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R0-03-models-and-protocol.md": {
+      "id": "R0-03",
+      "title": "Models and protocol",
+      "status": "done",
+      "dependencies": [],
+      "blocker": null,
+      "started_at": "2026-06-23T05:20:00Z",
+      "completed_at": "2026-06-23T05:20:30Z",
+      "last_updated_at": "2026-06-23T05:20:30Z"
+    },
+    "tasks/task-R1-01-minimax-provider.md": {
+      "id": "R1-01",
+      "title": "Minimax provider",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R0-02-keychain-service.md",
+        "tasks/task-R0-03-models-and-protocol.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R1-02-hapo-hub-provider.md": {
+      "id": "R1-02",
+      "title": "Hapo hub provider",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R0-02-keychain-service.md",
+        "tasks/task-R0-03-models-and-protocol.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R1-03-quota-service.md": {
+      "id": "R1-03",
+      "title": "Quota service",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R0-03-models-and-protocol.md",
+        "tasks/task-R1-01-minimax-provider.md",
+        "tasks/task-R1-02-hapo-hub-provider.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R2-01-popover-shell.md": {
+      "id": "R2-01",
+      "title": "Popover shell",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R0-01-xcode-scaffold.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R2-02-quota-panel.md": {
+      "id": "R2-02",
+      "title": "Quota panel",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R1-03-quota-service.md",
+        "tasks/task-R2-01-popover-shell.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R2-03-config-panel.md": {
+      "id": "R2-03",
+      "title": "Config panel",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R3-01-config-service.md",
+        "tasks/task-R2-01-popover-shell.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R2-04-settings-provider-mgmt.md": {
+      "id": "R2-04",
+      "title": "Settings provider mgmt",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R1-03-quota-service.md",
+        "tasks/task-R0-02-keychain-service.md",
+        "tasks/task-R2-01-popover-shell.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R3-01-config-service.md": {
+      "id": "R3-01",
+      "title": "Config service",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R0-01-xcode-scaffold.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:25:00Z",
+      "completed_at": "2026-06-23T05:30:00Z",
+      "last_updated_at": "2026-06-23T05:30:00Z"
+    },
+    "tasks/task-R3-02-build-and-smoke.md": {
+      "id": "R3-02",
+      "title": "Build and smoke",
+      "status": "done",
+      "dependencies": [
+        "tasks/task-R0-01-xcode-scaffold.md",
+        "tasks/task-R1-03-quota-service.md",
+        "tasks/task-R2-02-quota-panel.md",
+        "tasks/task-R2-03-config-panel.md",
+        "tasks/task-R2-04-settings-provider-mgmt.md",
+        "tasks/task-R3-01-config-service.md"
+      ],
+      "blocker": null,
+      "started_at": "2026-06-23T05:30:00Z",
+      "completed_at": "2026-06-23T05:45:00Z",
+      "last_updated_at": "2026-06-23T05:45:00Z"
+    }
+  },
+  "blocker": null,
+  "progress": {
+    "init": "done",
+    "requirements": "done",
+    "research": "done",
+    "design": "done",
+    "tasks": "done",
+    "code": "done",
+    "test": "done",
+    "review": "done"
+  },
+  "timestamps": {
+    "init": "2026-06-23T04:38:38Z",
+    "requirements_done": "2026-06-23T04:42:00Z",
+    "research_done": "2026-06-23T04:42:00Z",
+    "design_done": "2026-06-23T04:44:00Z",
+    "tasks_done": "2026-06-23T04:47:20Z",
+    "code_done": "2026-06-23T05:30:00Z",
+    "test_done": "2026-06-23T05:45:00Z",
+    "review_done": "2026-06-23T05:04:18Z",
+    "validation_done": "2026-06-23T05:04:18Z"
+  },
+  "design_context": {
+    "discovery_mode": "light",
+    "discovery_reason": "Greenfield macOS app; architecture and provider contract already fixed in docs/system-architecture.md; light discovery focuses on exact API contract fields and local filesystem paths.",
+    "execution_tier": "standard",
+    "validation_recommended": true
+  },
+  "validation": {
+    "status": "completed",
+    "session_count": 1,
+    "questions_asked": 3,
+    "last_validated_at": "2026-06-23T05:04:18Z"
+  },
+  "translation": {
+    "enabled": false,
+    "language": null,
+    "language_code": null,
+    "dir": null,
+    "sync": "always",
+    "last_synced_at": null
+  },
+  "ready_for_implementation": true
+}
