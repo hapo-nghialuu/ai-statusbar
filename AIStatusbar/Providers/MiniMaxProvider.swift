@@ -30,8 +30,16 @@ import Foundation
 /// Multi-model handling: each model becomes its own pair of windows
 /// (interval + weekly). This makes the breakdown visible per-model
 /// instead of collapsing everything into one "min across models" number.
+/// Models in `excludedModels` are filtered out (e.g. "video" — MiniMax
+/// returns a separate quota bucket for video generation that BOSS does
+/// not want surfaced in the popover).
 final class MiniMaxProvider: QuotaProvider {
     static let endpoint = URL(string: "https://api.minimax.io/v1/token_plan/remains")!
+
+    /// Models to filter out of the popover (case-insensitive).
+    /// MiniMax returns separate quota buckets per capability; "video"
+    /// is tracked but BOSS doesn't surface it.
+    static let excludedModels: Set<String> = ["video"]
 
     let id = "minimax"
     let displayName = "MiniMax"
@@ -111,9 +119,15 @@ final class MiniMaxProvider: QuotaProvider {
         }
         // 1 model → compact labels ("5 giờ" / "Tuần")
         // ≥2 models → disambiguate with model name prefix ("general 5h" / etc.)
-        let multiple = root.model_remains.count > 1
+        let visible = root.model_remains.filter { !Self.excludedModels.contains($0.model_name.lowercased()) }
+        guard !visible.isEmpty else {
+            return ProviderStatus(id: id, displayName: displayName, windows: [],
+                                  lastUpdated: Date(),
+                                  error: "Tất cả model đều nằm trong danh sách loại trừ")
+        }
+        let multiple = visible.count > 1
         var windows: [QuotaWindow] = []
-        for m in root.model_remains {
+        for m in visible {
             let prefix = multiple ? "\(m.model_name) " : ""
             windows.append(QuotaWindow(label: "\(prefix)5 giờ",
                                        usedPct: 100 - m.current_interval_remaining_percent,
