@@ -29,10 +29,14 @@ enum MenuBarIconRenderer {
         }
     }
 
-    /// Load the bundled menu bar icon (the bird).
+    /// Load the bundled menu bar icon (the bird). We deliberately do NOT
+    /// set `isTemplate = true` here: that flag would make AppKit redraw
+    /// the asset as a single-colour mask, losing the bird's blue colour.
+    /// The asset already has the correct alpha and palette for the menu
+    /// bar background on both light and dark appearances.
     static func iconImage() -> NSImage {
         if let img = NSImage(named: assetName) {
-            img.isTemplate = true
+            img.isTemplate = false
             return img
         }
         return NSImage(size: NSSize(width: 22, height: 22))
