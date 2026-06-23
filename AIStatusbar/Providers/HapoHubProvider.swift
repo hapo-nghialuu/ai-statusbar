@@ -2,24 +2,16 @@ import Foundation
 
 /// Hapo Hub quota provider.
 ///
-/// Real adapter (verified 2026-06-23):
-/// `GET <baseURL>` with `Authorization: Bearer <token>`.
-/// Response shape:
-/// ```json
-/// {
-///   "usage_percentage":       19.07,
-///   "remaining_budget_usd":   16.19,
-///   "used_budget_usd":         3.81,
-///   "weekly_budget_usd":      20,
-///   "budget_week_ends_at":   "2026-06-29T00:00:00+07:00",
-///   "budget_week_start_at":  "2026-06-22T00:00:00+07:00",
-///   "timezone": "Asia/Hanoi"
-/// }
-/// ```
+/// Two HTTP calls per fetch:
+///  - `GET /v1/me`         — returns { email, name, ... } for the account.
+///                          Used to populate accountLabel so the UI can
+///                          show "nghialt@haposoft.com" instead of a
+///                          token-prefix hash.
+///  - `GET /v1/budget/week` — returns weekly quota (percent + dollar).
 ///
-/// The window's `subtitle` carries "$16.19 / $20.00" and `resetDate`
-/// is parsed from `budget_week_ends_at` so the UI can show
-/// "Resets in 6d 1h" instead of a hardcoded "weekly" hint.
+/// Both are issued in parallel via `async let`. The budget response is
+/// the source of truth for the quota panel; /v1/me is best-effort — if
+/// it errors out, we fall back to user override then token-prefix.
 final class HapoHubProvider: QuotaProvider {
     var id: String { config.id }
     var displayName: String { config.displayName }
@@ -46,50 +38,68 @@ final class HapoHubProvider: QuotaProvider {
         return f
     }()
 
+    private static let meURL = URL(string: "https://<HAPO_ME_URL>")!
+
     /// User-set accountLabel override from providers.json.
     private func override() -> String? {
         ProvidersStore.load().providers.first(where: { $0.id == self.id })?.accountLabel
     }
 
-    /// Resolve accountLabel: user override if non-empty, else token-prefix
-    /// fallback (e.g. "sk-ag-f001"). Shared with MiniMaxProvider via the
-    /// identical rule — kept duplicated here rather than promoted to a
-    /// global helper because the fallback string length could diverge per
-    /// provider (e.g. truncate to 12 for readability) in the future.
-    static func deriveAccountLabel(override: String?, token: String) -> String {
+    /// Resolve accountLabel: real email from API > user override (if set
+    /// and non-empty) > token-prefix fallback.
+    static func deriveAccountLabel(override: String?, token: String, email: String? = nil) -> String {
+        if let e = email, !e.isEmpty { return e }
         if let o = override, !o.isEmpty { return o }
         return String(token.prefix(8))
     }
 
     func fetch() async throws -> ProviderStatus {
+        // 1. Token read + validation.
         let token: String
         do {
             token = try keychain.read(account: config.id)
         } catch KeychainError.itemNotFound {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Chưa cấu hình token")
+            return errorStatus("Chưa cấu hình token")
         } catch let e as KeychainError {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Keychain error: \(e)")
+            return errorStatus("Keychain error: \(e)")
         } catch {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "\(error)")
+            return errorStatus("\(error)")
         }
 
         if token.unicodeScalars.contains(where: { !Self.tokenCharacterSet.contains($0) }) {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Token chứa ký tự không hợp lệ")
+            return errorStatus("Token chứa ký tự không hợp lệ")
         }
-        let accountLabel = Self.deriveAccountLabel(override: override(), token: token)
 
+        // 2. Two parallel HTTP calls — budget is the data we render,
+        //    /v1/me is best-effort identity enrichment.
+        async let budgetStatus = fetchBudget(token: token)
+        async let email        = fetchEmail(token: token)
+
+        var status = await budgetStatus
+        let resolvedEmail = await email
+
+        // 3. Account label: API email > user override > token prefix.
+        let label = Self.deriveAccountLabel(
+            override: override(),
+            token: token,
+            email: resolvedEmail
+        )
+        status = ProviderStatus(
+            id: status.id,
+            displayName: status.displayName,
+            windows: status.windows,
+            lastUpdated: status.lastUpdated,
+            error: status.error,
+            accountLabel: label
+        )
+        return status
+    }
+
+    // MARK: - Budget call
+
+    private func fetchBudget(token: String) async -> ProviderStatus {
         guard let url = URL(string: config.baseURL) else {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "baseURL không hợp lệ")
+            return errorStatus("baseURL không hợp lệ")
         }
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
@@ -103,36 +113,26 @@ final class HapoHubProvider: QuotaProvider {
         do {
             (data, response) = try await session.data(for: req)
         } catch {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Network: \(error.localizedDescription)")
+            return errorStatus("Network: \(error.localizedDescription)")
         }
 
         guard let http = response as? HTTPURLResponse else {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Response không phải HTTP")
+            return errorStatus("Response không phải HTTP")
         }
         let ct = http.value(forHTTPHeaderField: "Content-Type") ?? ""
         if !(200..<300).contains(http.statusCode) {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "HTTP \(http.statusCode)")
+            return errorStatus("HTTP \(http.statusCode)")
         }
         if !ct.hasPrefix("application/json") {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Endpoint trả về non-JSON (Content-Type: \(ct))")
+            return errorStatus("Endpoint trả về non-JSON (Content-Type: \(ct))")
         }
-        return parse(data, accountLabel: accountLabel)
+        return parseBudget(data)
     }
 
-    func parse(_ data: Data, accountLabel: String) -> ProviderStatus {
+    private func parseBudget(_ data: Data) -> ProviderStatus {
         let decoder = JSONDecoder()
         guard let r = try? decoder.decode(BudgetResponse.self, from: data) else {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Response thiếu trường")
+            return errorStatus("Response thiếu trường")
         }
         let remainingPct = max(0, min(100, Int((100.0 - r.usage_percentage).rounded())))
         let usedPct = 100 - remainingPct
@@ -147,8 +147,33 @@ final class HapoHubProvider: QuotaProvider {
         return ProviderStatus(id: id, displayName: displayName,
                               windows: [win],
                               lastUpdated: Date(),
-                              error: nil,
-                              accountLabel: accountLabel)
+                              error: nil)
+    }
+
+    // MARK: - Identity call (best-effort)
+
+    private func fetchEmail(token: String) async -> String? {
+        var req = URLRequest(url: Self.meURL)
+        req.httpMethod = "GET"
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.setValue(config.authHeaderTemplate.replacingOccurrences(of: "{token}", with: token),
+                     forHTTPHeaderField: "Authorization")
+        req.timeoutInterval = 10
+        do {
+            let (data, response) = try await session.data(for: req)
+            guard let http = response as? HTTPURLResponse,
+                  (200..<300).contains(http.statusCode) else { return nil }
+            return (try? JSONDecoder().decode(MeResponse.self, from: data))?.email
+        } catch {
+            return nil
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func errorStatus(_ message: String) -> ProviderStatus {
+        ProviderStatus(id: id, displayName: displayName, windows: [],
+                       lastUpdated: Date(), error: message)
     }
 
     private struct BudgetResponse: Decodable {
@@ -159,5 +184,10 @@ final class HapoHubProvider: QuotaProvider {
         let budget_week_ends_at: String
         let budget_week_start_at: String
         let timezone: String
+    }
+
+    private struct MeResponse: Decodable {
+        let email: String?
+        let name: String?
     }
 }
