@@ -38,9 +38,9 @@ enum MenuBarIconRenderer {
     /// The bird asset, scaled to `pointSize`. Deliberately not a template
     /// image: that flag flattens the bird to a single colour and loses its
     /// blue palette (see git history). The default menu bar slot is ~18pt;
-    /// 22pt pushes the bird past the slot so it reads clearly larger than
-    /// neighbouring status icons.
-    static func iconImage(pointSize: CGFloat = 22) -> NSImage {
+    /// 24pt ≈ the full NSStatusBar thickness — effectively the hard ceiling,
+    /// since macOS clips anything taller than the bar.
+    static func iconImage(pointSize: CGFloat = 24) -> NSImage {
         scaled(NSImage(named: assetName), to: pointSize, isTemplate: false)
             ?? NSImage(size: NSSize(width: pointSize, height: pointSize))
     }
