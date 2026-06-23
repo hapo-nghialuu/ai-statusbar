@@ -49,6 +49,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         popover.contentViewController = host
         popover.delegate = self
+        // Drop the triangular arrow that NSPopover draws toward its anchor.
+        // Public API offers no arrow-less option, so call the private
+        // selector that AppKit exposes for this exact purpose.
+        popover.perform(NSSelectorFromString("_setArrowEdge:"),
+                         with: NSNumber(value: NSInteger(0)))
 
         // Re-render icon whenever QuotaService publishes a new status
         services.quotaService.$statuses
