@@ -52,6 +52,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.image = MenuBarIconRenderer.iconImage()
             button.imageScaling = .scaleProportionallyDown
             button.imagePosition = .imageLeft
+            // Pull the title flush against the icon. AppKit's default
+            // imagePadding leaves a 4pt+ gap; the default title padding
+            // adds another on the trailing edge. Pin both to 2pt so the
+            // number hugs the bird on both sides.
+            if let cell = button.cell as? NSButtonCell {
+                cell.imagePadding = 2
+                cell.titlePadding = 2
+            }
             // Use the system monospaced digit font so the title width stays
             // stable as the digits change.
             button.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
@@ -253,7 +261,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.title = ""
             return
         }
-        button.title = "  \(slot.remainingPct)%  "
+        button.title = "\(slot.remainingPct)%"
     }
 
     // Cmd+, / menu "Settings" — open the panel (if closed) and switch to the

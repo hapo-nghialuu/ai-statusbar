@@ -34,11 +34,26 @@ enum MenuBarIconRenderer {
     /// the asset as a single-colour mask, losing the bird's blue colour.
     /// The asset already has the correct alpha and palette for the menu
     /// bar background on both light and dark appearances.
-    static func iconImage() -> NSImage {
-        if let img = NSImage(named: assetName) {
-            img.isTemplate = false
-            return img
+    ///
+    /// `pointSize` controls the on-screen point size. The default menu bar
+    /// slot is ~18pt tall; using 14pt gives the bird a bit of breathing
+    /// room so it doesn't crowd the percentage title.
+    static func iconImage(pointSize: CGFloat = 14) -> NSImage {
+        guard let source = NSImage(named: assetName) else {
+            return NSImage(size: NSSize(width: pointSize, height: pointSize))
         }
-        return NSImage(size: NSSize(width: 22, height: 22))
+        let target = NSSize(width: pointSize, height: pointSize)
+        let out = NSImage(size: target)
+        out.lockFocus()
+        NSGraphicsContext.current?.imageInterpolation = .high
+        source.draw(
+            in: NSRect(origin: .zero, size: target),
+            from: NSRect(origin: .zero, size: source.size),
+            operation: .sourceOver,
+            fraction: 1.0
+        )
+        out.unlockFocus()
+        out.isTemplate = false
+        return out
     }
 }
