@@ -31,6 +31,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Pixels the panel is nudged up toward the menu bar from its anchor.
     private let topNudge: CGFloat = 10
 
+    // Menu bar rotation: per-(provider, window) slots, advanced by a timer.
+    private var slots: [MenuBarIconRenderer.Slot] = []
+    private var slotIndex: Int = 0
+    private var rotationTimer: Timer?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         services.start()
         NotificationCenter.default.addObserver(
@@ -38,13 +43,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: .openSettings, object: nil
         )
 
-        // Status bar item — dynamic bird icon, redrawn once at launch.
-        statusItem = NSStatusBar.system.statusItem(withLength: 30)
-        refreshIcon()
+        // Status bar item — variable length so the title text fits; the
+        // icon is the bundled bird and the title is the rotating percentage.
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
             button.target = self
             button.action = #selector(togglePanel(_:))
+            button.image = MenuBarIconRenderer.iconImage()
+            button.imageScaling = .scaleProportionallyDown
+            button.imagePosition = .imageLeft
+            // Use the system monospaced digit font so the title width stays
+            // stable as the digits change.
+            button.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
         }
+        applyCurrentSlot()
 
         // SwiftUI content hosted in a controller that reports its fitting
         // size, so we can resize the panel to hug the content.
@@ -86,10 +98,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in self?.resizePanelToContent() }
         }
 
-        // Re-render the menu bar icon whenever QuotaService publishes.
+        // Re-render the menu bar title whenever QuotaService publishes.
         services.quotaService.$statuses
             .receive(on: RunLoop.main)
-            .sink { [weak self] statuses in self?.refreshIcon(statuses: statuses) }
+            .sink { [weak self] statuses in self?.updateSlots(from: statuses) }
             .store(in: &cancellables)
 
         installClickOutsideMonitor()
@@ -185,11 +197,63 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshIcon(statuses: [ProviderStatus] = []) {
-        let image = MenuBarIconRenderer.image(statuses: statuses)
-        image.isTemplate = false
-        statusItem.button?.image = image
-        statusItem.button?.imageScaling = .scaleProportionallyDown
-        statusItem.button?.imagePosition = .imageOnly
+        // Legacy entry point kept for compatibility with any caller passing
+        // the old signature; the menu bar title is now driven by
+        // updateSlots(from:) + applyCurrentSlot().
+        updateSlots(from: statuses)
+    }
+
+    // MARK: - Menu bar rotation
+
+    /// How long each (provider, window) slot is shown before advancing.
+    private let slotDuration: TimeInterval = 5.0
+
+    /// Recompute the list of slots from the latest statuses and restart
+    /// the rotation timer. When the list shrinks (a provider disappears
+    /// or hits an error), the next slot is the one after the previously
+    /// shown one, clamped to the new bounds.
+    private func updateSlots(from statuses: [ProviderStatus]) {
+        let newSlots = MenuBarIconRenderer.slots(from: statuses)
+        let wasEmpty = slots.isEmpty
+        slots = newSlots
+        if slots.isEmpty {
+            slotIndex = 0
+            rotationTimer?.invalidate()
+            rotationTimer = nil
+        } else {
+            // Keep advancing position when possible so the rotation feels
+            // continuous after a refresh.
+            if slotIndex >= slots.count { slotIndex = 0 }
+            startRotationTimer()
+        }
+        applyCurrentSlot()
+    }
+
+    private func startRotationTimer() {
+        rotationTimer?.invalidate()
+        let t = Timer(timeInterval: slotDuration, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.advanceSlot() }
+        }
+        // .common so it fires during menu tracking too.
+        RunLoop.main.add(t, forMode: .common)
+        rotationTimer = t
+    }
+
+    private func advanceSlot() {
+        guard !slots.isEmpty else { return }
+        slotIndex = (slotIndex + 1) % slots.count
+        applyCurrentSlot()
+    }
+
+    /// Push the current slot's text to the status bar button. The icon is
+    /// always the bird; only the title changes.
+    private func applyCurrentSlot() {
+        guard let button = statusItem?.button else { return }
+        guard let slot = slots.indices.contains(slotIndex) ? slots[slotIndex] : nil else {
+            button.title = ""
+            return
+        }
+        button.title = "  \(slot.remainingPct)%  "
     }
 
     // Cmd+, / menu "Settings" — open the panel (if closed) and switch to the
@@ -204,6 +268,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        rotationTimer?.invalidate()
+        rotationTimer = nil
         if let m = localClickMonitor { NSEvent.removeMonitor(m) }
         if let m = globalClickMonitor { NSEvent.removeMonitor(m) }
         services.stop()
