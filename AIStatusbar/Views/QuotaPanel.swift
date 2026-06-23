@@ -37,13 +37,14 @@ struct QuotaOverview: View {
                     )
                     if let s = quota.statuses.first(where: { $0.id == selected })
                         ?? quota.statuses.first {
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                ProviderHeaderCard(status: s)
-                                ProviderCard(status: s)
-                            }
+                        VStack(alignment: .leading, spacing: 8) {
+                            ProviderHeaderCard(status: s)
+                            ProviderCard(status: s)
                         }
                     }
+                    // Spacer pushes the action list to the bottom of the
+                    // popover so cards above hug their content with no gap.
+                    Spacer(minLength: 0)
                     ActionsList()
                 }
                 .padding(.horizontal, 14)
