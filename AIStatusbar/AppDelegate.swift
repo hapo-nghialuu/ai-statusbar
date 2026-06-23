@@ -132,6 +132,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settingsWindow?.title = "BirdNion — Settings"
             settingsWindow?.styleMask = [.titled, .closable, .miniaturizable]
             settingsWindow?.setContentSize(NSSize(width: 420, height: 300))
+            // Force light appearance + brand background so the Settings
+            // window visually matches the popover (which uses the cream
+            // palette). Without this, macOS follows the user's dark-mode
+            // preference and the window ends up with a black background
+            // and green macOS-default controls.
+            settingsWindow?.appearance = NSAppearance(named: .aqua)
+            settingsWindow?.backgroundColor = NSColor(srgbRed: 0.988, green: 0.988, blue: 0.988, alpha: 1.0)
         }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

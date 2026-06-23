@@ -34,11 +34,12 @@ struct SettingsWindow: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .controlSize(.small)
+                .tint(VocabbyTheme.blue)
                 .frame(width: 200)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(.bar)
+            .background(VocabbyTheme.badge)
 
             Group {
                 switch section {
@@ -49,6 +50,7 @@ struct SettingsWindow: View {
             .frame(width: 420, height: 260)
         }
         .frame(width: 420, height: 300)
+        .background(VocabbyTheme.background)
     }
 }
 
@@ -100,6 +102,7 @@ struct ProvidersSection: View {
             .toggleStyle(.switch)
             .controlSize(.mini)
             .labelsHidden()
+            .tint(VocabbyTheme.blue)
             SecureField("Token", text: binding(for: row.id))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 11).monospacedDigit())
