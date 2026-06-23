@@ -103,6 +103,10 @@ struct ProvidersSection: View {
             .controlSize(.mini)
             .labelsHidden()
             .tint(VocabbyTheme.blue)
+            TextField("Account", text: labelBinding(for: row.id))
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 11).monospacedDigit())
+                .help("Tùy chọn: hiển thị trên tab chip và provider header. Để trống = auto-derive từ 8 ký tự đầu của token.")
             SecureField("Token", text: binding(for: row.id))
                 .textFieldStyle(.roundedBorder)
                 .font(.system(size: 11).monospacedDigit())
@@ -121,6 +125,23 @@ struct ProvidersSection: View {
             .controlSize(.small)
             .disabled((pendingTokens[row.id] ?? "").isEmpty)
         }
+    }
+
+    private func labelBinding(for id: String) -> Binding<String> {
+        Binding(
+            get: {
+                rows.first(where: { $0.id == id })?.accountLabel ?? ""
+            },
+            set: { newVal in
+                if let i = rows.firstIndex(where: { $0.id == id }) {
+                    rows[i].accountLabel = newVal.isEmpty ? nil : newVal
+                    saveAll()
+                    // Trigger a refresh so the new label appears in the UI
+                    // immediately rather than waiting for the next 120s tick.
+                    NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
+                }
+            }
+        )
     }
 
     private func binding(for id: String) -> Binding<String> {

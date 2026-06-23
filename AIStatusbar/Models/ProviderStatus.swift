@@ -41,12 +41,25 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
     let windows: [QuotaWindow]
     let lastUpdated: Date
     let error: String?
+    /// User-facing identifier for this account. Strategy:
+    /// 1. If user explicitly set one in Settings (ProviderConfig.accountLabel),
+    ///    use that.
+    /// 2. Otherwise derive from the keychain token's first 8 chars
+    ///    (e.g. "sk-cp-dEwaSdME") so the chip has *something* identifying.
+    /// nil only if no token is configured.
+    let accountLabel: String?
 
-    init(id: String, displayName: String, windows: [QuotaWindow], lastUpdated: Date, error: String? = nil) {
+    init(id: String,
+         displayName: String,
+         windows: [QuotaWindow],
+         lastUpdated: Date,
+         error: String? = nil,
+         accountLabel: String? = nil) {
         self.id = id
         self.displayName = displayName
         self.windows = windows
         self.lastUpdated = lastUpdated
         self.error = error
+        self.accountLabel = accountLabel
     }
 }

@@ -10,6 +10,9 @@ struct ProviderConfig: Codable, Equatable {
     var enabled: Bool
     var baseURL: String?
     var displayName: String?
+    /// User-set identifier for this account (email, alias, etc.).
+    /// When nil, the provider derives a default from the keychain token.
+    var accountLabel: String?
 }
 
 enum ProvidersStoreError: Error {

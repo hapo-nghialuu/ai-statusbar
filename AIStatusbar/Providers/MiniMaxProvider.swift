@@ -41,6 +41,20 @@ final class MiniMaxProvider: QuotaProvider {
     /// is tracked but BOSS doesn't surface it.
     static let excludedModels: Set<String> = ["video"]
 
+    /// Look up the user-set accountLabel override from providers.json.
+    /// One file read per fetch — cheap given the 120s poll interval.
+    private func override() -> String? {
+        ProvidersStore.load().providers.first(where: { $0.id == self.id })?.accountLabel
+    }
+
+    /// Combine user override with token-derived default. Override wins if
+    /// non-empty; otherwise the first 8 characters of the token serve as a
+    /// zero-config identifier (e.g. "sk-cp-dEwaSdME").
+    static func deriveAccountLabel(override: String?, token: String) -> String {
+        if let o = override, !o.isEmpty { return o }
+        return String(token.prefix(8))
+    }
+
     let id = "minimax"
     let displayName = "MiniMax"
     private let session: URLSession
@@ -68,6 +82,7 @@ final class MiniMaxProvider: QuotaProvider {
                                   lastUpdated: Date(),
                                   error: "\(error)")
         }
+        let accountLabel = Self.deriveAccountLabel(override: override(), token: token)
 
         var req = URLRequest(url: Self.endpoint)
         req.httpMethod = "GET"
@@ -95,10 +110,10 @@ final class MiniMaxProvider: QuotaProvider {
                                   lastUpdated: Date(),
                                   error: "HTTP \(http.statusCode)")
         }
-        return parse(data)
+        return parse(data, accountLabel: accountLabel)
     }
 
-    func parse(_ data: Data) -> ProviderStatus {
+    func parse(_ data: Data, accountLabel: String) -> ProviderStatus {
         let decoder = JSONDecoder()
         guard let root = try? decoder.decode(RemainsResponse.self, from: data) else {
             return ProviderStatus(id: id, displayName: displayName, windows: [],
@@ -139,7 +154,8 @@ final class MiniMaxProvider: QuotaProvider {
         return ProviderStatus(id: id, displayName: displayName,
                               windows: windows,
                               lastUpdated: Date(),
-                              error: nil)
+                              error: nil,
+                              accountLabel: accountLabel)
     }
 
     private struct RemainsResponse: Decodable {

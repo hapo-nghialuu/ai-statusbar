@@ -186,8 +186,11 @@ struct ProviderHeaderCard: View {
                     if quota.isRefreshing {
                         ProgressView().controlSize(.mini).tint(VocabbyTheme.blue)
                     }
-                    Text(planTier.isEmpty ? updatedAgo : "\(planTier) · \(updatedAgo)")
-                        .font(.system(size: 11))
+                    let subtitleParts = [status.accountLabel, planTier, updatedAgo]
+                        .compactMap { $0 }
+                        .filter { !$0.isEmpty }
+                    Text(subtitleParts.joined(separator: " · "))
+                        .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(VocabbyTheme.secondary)
                         .lineLimit(1)
                 }

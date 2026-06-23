@@ -46,6 +46,21 @@ final class HapoHubProvider: QuotaProvider {
         return f
     }()
 
+    /// User-set accountLabel override from providers.json.
+    private func override() -> String? {
+        ProvidersStore.load().providers.first(where: { $0.id == self.id })?.accountLabel
+    }
+
+    /// Resolve accountLabel: user override if non-empty, else token-prefix
+    /// fallback (e.g. "sk-ag-f001"). Shared with MiniMaxProvider via the
+    /// identical rule — kept duplicated here rather than promoted to a
+    /// global helper because the fallback string length could diverge per
+    /// provider (e.g. truncate to 12 for readability) in the future.
+    static func deriveAccountLabel(override: String?, token: String) -> String {
+        if let o = override, !o.isEmpty { return o }
+        return String(token.prefix(8))
+    }
+
     func fetch() async throws -> ProviderStatus {
         let token: String
         do {
@@ -69,6 +84,7 @@ final class HapoHubProvider: QuotaProvider {
                                   lastUpdated: Date(),
                                   error: "Token chứa ký tự không hợp lệ")
         }
+        let accountLabel = Self.deriveAccountLabel(override: override(), token: token)
 
         guard let url = URL(string: config.baseURL) else {
             return ProviderStatus(id: id, displayName: displayName, windows: [],
@@ -108,10 +124,10 @@ final class HapoHubProvider: QuotaProvider {
                                   lastUpdated: Date(),
                                   error: "Endpoint trả về non-JSON (Content-Type: \(ct))")
         }
-        return parse(data)
+        return parse(data, accountLabel: accountLabel)
     }
 
-    func parse(_ data: Data) -> ProviderStatus {
+    func parse(_ data: Data, accountLabel: String) -> ProviderStatus {
         let decoder = JSONDecoder()
         guard let r = try? decoder.decode(BudgetResponse.self, from: data) else {
             return ProviderStatus(id: id, displayName: displayName, windows: [],
@@ -131,7 +147,8 @@ final class HapoHubProvider: QuotaProvider {
         return ProviderStatus(id: id, displayName: displayName,
                               windows: [win],
                               lastUpdated: Date(),
-                              error: nil)
+                              error: nil,
+                              accountLabel: accountLabel)
     }
 
     private struct BudgetResponse: Decodable {
