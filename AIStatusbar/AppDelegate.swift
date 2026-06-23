@@ -124,6 +124,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             popover.performClose(sender)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            // Nudge the popover window up by 10pt (screen coords: +y is up)
+            // so it sits closer to the menu bar instead of dropping low.
+            if let win = popover.contentViewController?.view.window {
+                var frame = win.frame
+                frame.origin.y += 10
+                win.setFrame(frame, display: true)
+            }
             popover.contentViewController?.view.window?.becomeKey()
         }
     }

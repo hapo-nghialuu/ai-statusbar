@@ -28,7 +28,7 @@ struct ProvidersStore {
             ProviderConfig(id: "minimax", enabled: true),
             ProviderConfig(id: "hapo", enabled: true,
                            baseURL: "https://<HAPO_BASE_URL>",
-                           displayName: "Hapo AI Hub")
+                           displayName: "AI Hub")
         ])
     }()
 

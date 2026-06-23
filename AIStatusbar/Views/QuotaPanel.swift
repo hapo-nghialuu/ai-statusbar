@@ -190,7 +190,7 @@ struct ProviderHeaderCard: View {
         // Heuristic by provider id; expand when more providers are added.
         switch status.id {
         case "minimax": return "Token Plan"
-        case "hapo":    return "AI Hub"
+        case "hapo":    return ""
         default:        return ""
         }
     }
