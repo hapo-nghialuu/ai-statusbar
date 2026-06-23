@@ -86,15 +86,11 @@ struct HeaderCard: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            // Hexagon badge
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(VocabbyTheme.blue)
-                    .frame(width: 40, height: 44)
-                Text("AI")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-            }
+            Image("OriginalImage")
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 36, height: 36)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text("BirdNion")
                     .font(.system(size: 15, weight: .semibold))
@@ -240,36 +236,17 @@ struct FooterMenu: View {
     @EnvironmentObject var quota: QuotaService
 
     var body: some View {
-        VStack(spacing: 10) {
-            Button {
-                NSApp.activate(ignoringOtherApps: true)
-            } label: {
-                HStack {
-                    Spacer()
-                    Text("ĐANG DÙNG")
-                        .font(.system(size: 13, weight: .bold))
-                        .tracking(1.0)
-                        .foregroundStyle(.white)
-                    Spacer()
-                }
-                .padding(.vertical, 10)
-                .background(VocabbyTheme.blue)
-                .clipShape(Capsule())
+        HStack(spacing: 0) {
+            FooterMenuItem(icon: "plus.circle", label: "Add") { }
+            FooterMenuItem(icon: quota.isRefreshing ? "arrow.triangle.2.circlepath" : "arrow.clockwise",
+                           label: "Refresh",
+                           isLoading: quota.isRefreshing) {
+                NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
             }
-            .buttonStyle(.plain)
-
-            HStack(spacing: 0) {
-                FooterMenuItem(icon: "plus.circle", label: "Add") { }
-                FooterMenuItem(icon: quota.isRefreshing ? "arrow.triangle.2.circlepath" : "arrow.clockwise",
-                               label: "Refresh",
-                               isLoading: quota.isRefreshing) {
-                    NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
-                }
-                FooterMenuItem(icon: "gearshape", label: "Settings") {
-                    NotificationCenter.default.post(name: .openSettings, object: nil)
-                }
-                FooterMenuItem(icon: "power", label: "Quit") { NSApp.terminate(nil) }
+            FooterMenuItem(icon: "gearshape", label: "Settings") {
+                NotificationCenter.default.post(name: .openSettings, object: nil)
             }
+            FooterMenuItem(icon: "power", label: "Quit") { NSApp.terminate(nil) }
         }
     }
 }
