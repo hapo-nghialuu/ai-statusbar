@@ -197,8 +197,8 @@ struct ProviderHeaderCard: View {
             Image("OriginalImage")
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 36, height: 36)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .frame(width: 44, height: 44)  // +22% from 36
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(status.displayName)
                     .font(.system(size: 14, weight: .semibold))
@@ -219,7 +219,13 @@ struct ProviderHeaderCard: View {
             Spacer(minLength: 6)
             StatusPill(ok: !hasError, errorCount: hasError ? 1 : 0)
         }
-        .vocabbyCard()
+        // Padding is tighter than the standard vocabbyCard (12pt) so the
+        // taller 44pt logo doesn't grow the card height.
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .background(VocabbyTheme.card)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 1)
     }
 }
 
