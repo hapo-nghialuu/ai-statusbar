@@ -23,6 +23,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }()
     }
     private var statusItem: NSStatusItem!
+    /// Right-click / Ctrl-click menu for the status item. Kept off
+    /// `statusItem.menu` so a left click still toggles the quota popover; it's
+    /// attached only for the duration of a right-click (see `togglePanel`).
+    private var statusMenu: NSMenu?
     private var panel: DropdownPanel!
     private var hostingController: NSHostingController<AnyView>!
     private var cancellables = Set<AnyCancellable>()
@@ -56,15 +60,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let button = statusItem.button {
             button.target = self
             button.action = #selector(togglePanel(_:))
+            // Receive both clicks so we can route them ourselves: left toggles
+            // the quota popover, right shows the Settings menu. Assigning
+            // `statusItem.menu` directly would make AppKit swallow the left
+            // click and always show the menu instead.
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
 
-            // Attach a menu with a Settings… item bound to Cmd+, so right-
-            // clicking the status item offers a direct way in. We also
-            // install a local key monitor for Cmd+, below, because the
-            // status-item menu's keyEquivalent only fires when its own
-            // menu is open — Cmd+, from anywhere else (including the
-            // foreground app) was being routed to that app's preferences
-            // instead. The key monitor intercepts Cmd+, globally on the
-            // main thread and calls our `openSettings(_:)` ourselves.
+            // Build the right-click menu (Settings…). Cmd+, is handled by the
+            // global key monitor below, not by this menu's keyEquivalent —
+            // an LSUIElement app doesn't own the system Cmd+, chain, so the
+            // shortcut only works while the menu is already open otherwise.
             let menu = NSMenu()
             let settingsItem = NSMenuItem(
                 title: "Settings…",
@@ -73,10 +78,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settingsItem.keyEquivalentModifierMask = [.command]
             settingsItem.target = self
             menu.addItem(settingsItem)
-            statusItem.menu = menu
-            // Suppress the warning that "Cmd+, when no menu is visible" can
-            // be lost — the key monitor below catches it before AppKit can
-            // forward it to the next responder.
+            statusMenu = menu
+
             button.image = MenuBarIconRenderer.iconImage()
             button.imageScaling = .scaleProportionallyDown
             button.imagePosition = .imageLeft
@@ -144,6 +147,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Show / hide
 
     @objc func togglePanel(_ sender: AnyObject?) {
+        // Right-click (or Ctrl-click) shows the Settings menu; left-click
+        // toggles the quota popover. We attach the menu only for this one
+        // click and detach it immediately so the next left-click still
+        // reaches this action instead of AppKit opening the menu.
+        let event = NSApp.currentEvent
+        let isContextClick = event?.type == .rightMouseUp
+            || (event?.modifierFlags.contains(.control) ?? false)
+        if isContextClick, let menu = statusMenu, let button = statusItem.button {
+            statusItem.menu = menu
+            button.performClick(nil)
+            statusItem.menu = nil
+            return
+        }
+
         if panel.isVisible {
             hidePanel()
         } else {
