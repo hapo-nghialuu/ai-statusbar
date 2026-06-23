@@ -455,7 +455,7 @@ enum AboutPresenter {
 
 /// App color palette.
 enum VocabbyTheme {
-    static let background = Color(red: 0.988, green: 0.988, blue: 0.988)   // #FCFCFC
+    static let background = Color(red: 0.898, green: 0.898, blue: 0.898)   // #E5E5E5
     static let card       = Color.white
     static let primary    = Color(red: 0.122, green: 0.122, blue: 0.180)   // #1F1F2E
     static let secondary  = Color(red: 0.420, green: 0.447, blue: 0.502)   // #6B7280
