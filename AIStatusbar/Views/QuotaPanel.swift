@@ -149,6 +149,10 @@ struct ProviderTabs: View {
             Image("MiniMaxLogo").resizable().interpolation(.high)
         case "hapo":
             Image("HapoLogo").resizable().interpolation(.high)
+        case "codex":
+            // Monochrome SVG silhouette tinted blue here (white on the menu bar).
+            Image("CodexLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.blue)
         default:
             Image(systemName: "circle")
         }
