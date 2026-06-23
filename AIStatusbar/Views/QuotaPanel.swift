@@ -78,10 +78,10 @@ struct QuotaOverview: View {
 
 // MARK: - Provider Tabs
 
-/// Capsule chip tabs over enabled providers. Single-provider installs
-/// render just one active chip; multi-provider installs render a
-/// horizontally-laid row of pills with the selected one filled in
-/// brand blue and the rest muted on the badge gray.
+/// Capsule chip tabs over enabled providers. Each chip shows the provider
+/// name plus a small inline quota percentage (or "lỗi" if the provider is
+/// in error state). The selected chip is filled brand blue; the others are
+/// muted on the badge gray with a thin track-color outline.
 struct ProviderTabs: View {
     let providers: [ProviderStatus]
     @Binding var selectedId: String
@@ -98,22 +98,40 @@ struct ProviderTabs: View {
     @ViewBuilder
     private func chip(for p: ProviderStatus) -> some View {
         let active = p.id == selectedId
+        let suffix = chipSuffix(for: p)
         Button {
             selectedId = p.id
         } label: {
-            Text(p.displayName)
-                .font(.system(size: 11, weight: .semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .foregroundStyle(active ? .white : VocabbyTheme.primary)
-                .background(active ? VocabbyTheme.blue : VocabbyTheme.badge)
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(active ? Color.clear : VocabbyTheme.track, lineWidth: 1)
-                )
+            HStack(spacing: 5) {
+                Text(p.displayName)
+                    .font(.system(size: 11, weight: .semibold))
+                if let s = suffix {
+                    Text(s)
+                        .font(.system(size: 10, weight: .medium).monospacedDigit())
+                        .opacity(0.85)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .foregroundStyle(active ? .white : VocabbyTheme.primary)
+            .background(active ? VocabbyTheme.blue : VocabbyTheme.badge)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(active ? Color.clear : VocabbyTheme.track, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
+    }
+
+    /// Inline quota suffix. nil = don't show anything (still loading).
+    /// "lỗi" when the provider is in an error state; "X%" for the minimum
+    /// remaining percentage across the provider's windows otherwise.
+    private func chipSuffix(for p: ProviderStatus) -> String? {
+        if p.error != nil { return "lỗi" }
+        let pcts = p.windows.map(\.remainingPct)
+        if pcts.isEmpty { return nil }
+        return "\(pcts.min() ?? 0)%"
     }
 }
 

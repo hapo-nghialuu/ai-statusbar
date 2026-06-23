@@ -15,7 +15,7 @@ struct HapoHubConfig: Codable, Equatable {
     /// decoder) but kept for legacy compatibility with MockHapoHubProvider.
     static let real = HapoHubConfig(
         id: "hapo",
-        displayName: "Hapo AI Hub",
+        displayName: "AIHub",
         baseURL: "https://<HAPO_BASE_URL>",
         authHeaderTemplate: "Bearer {token}",
         jsonPath: "usage_percentage"
@@ -25,7 +25,7 @@ struct HapoHubConfig: Codable, Equatable {
     /// or wants to see the UI without a live request.
     static let mock = HapoHubConfig(
         id: "hapo",
-        displayName: "Hapo AI Hub (mock)",
+        displayName: "AIHub (mock)",
         baseURL: "TODO_BOSS",
         authHeaderTemplate: "Bearer {token}",
         jsonPath: "data.quota.remaining"
