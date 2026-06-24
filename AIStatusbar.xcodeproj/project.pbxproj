@@ -23,6 +23,10 @@
 		DDDD0005000000000000B003 /* QuotaService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0006000000000000F003 /* QuotaService.swift */; };
 		DDDD0007000000000000B004 /* ProvidersStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0008000000000000F004 /* ProvidersStore.swift */; };
 		DDDD0009000000000000B005 /* MiniMaxProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000A000000000000F005 /* MiniMaxProvider.swift */; };
+		DDDD00E1000000000000B0E0 /* OpenRouterProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F1000000000000F0E0 /* OpenRouterProvider.swift */; };
+		DDDD00E2000000000000B0E0 /* DeepSeekProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F2000000000000F0E0 /* DeepSeekProvider.swift */; };
+		DDDD00E3000000000000B0E0 /* ZaiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F3000000000000F0E0 /* ZaiProvider.swift */; };
+		DDDD00E4000000000000B0E0 /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F4000000000000F0E0 /* ClaudeProvider.swift */; };
 		DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000C000000000000F006 /* HapoHubConfig.swift */; };
 		DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000E000000000000F007 /* HapoHubProvider.swift */; };
 		DDDD000F0000000000B008 /* MockHapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0010000000000000F008 /* MockHapoHubProvider.swift */; };
@@ -89,6 +93,10 @@
 		DDDD0006000000000000F003 /* QuotaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/QuotaService.swift; sourceTree = "<group>"; };
 		DDDD0008000000000000F004 /* ProvidersStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Services/ProvidersStore.swift; sourceTree = "<group>"; };
 		DDDD000A000000000000F005 /* MiniMaxProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/MiniMaxProvider.swift; sourceTree = "<group>"; };
+		DDDD00F1000000000000F0E0 /* OpenRouterProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/OpenRouterProvider.swift; sourceTree = "<group>"; };
+		DDDD00F2000000000000F0E0 /* DeepSeekProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/DeepSeekProvider.swift; sourceTree = "<group>"; };
+		DDDD00F3000000000000F0E0 /* ZaiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/ZaiProvider.swift; sourceTree = "<group>"; };
+		DDDD00F4000000000000F0E0 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/ClaudeProvider.swift; sourceTree = "<group>"; };
 		DDDD000C000000000000F006 /* HapoHubConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/HapoHubConfig.swift; sourceTree = "<group>"; };
 		DDDD000E000000000000F007 /* HapoHubProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/HapoHubProvider.swift; sourceTree = "<group>"; };
 		DDDD0010000000000000F008 /* MockHapoHubProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/MockHapoHubProvider.swift; sourceTree = "<group>"; };
@@ -336,6 +344,10 @@
 				DDDD0005000000000000B003 /* QuotaService.swift in Sources */,
 				DDDD0007000000000000B004 /* ProvidersStore.swift in Sources */,
 				DDDD0009000000000000B005 /* MiniMaxProvider.swift in Sources */,
+				DDDD00E1000000000000B0E0 /* OpenRouterProvider.swift in Sources */,
+				DDDD00E2000000000000B0E0 /* DeepSeekProvider.swift in Sources */,
+				DDDD00E3000000000000B0E0 /* ZaiProvider.swift in Sources */,
+				DDDD00E4000000000000B0E0 /* ClaudeProvider.swift in Sources */,
 				DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */,
 				DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */,
 				DDDD000F0000000000B008 /* MockHapoHubProvider.swift in Sources */,

@@ -29,7 +29,13 @@ struct ProvidersStore {
             ProviderConfig(id: "codex", enabled: true),
             ProviderConfig(id: "hapo", enabled: true,
                            baseURL: "https://<HAPO_BASE_URL>",
-                           displayName: "AI Hub")
+                           displayName: "AI Hub"),
+            // Ported from CodexBar — off by default so they don't poll/error
+            // until the user adds a token (or, for Claude, grants Keychain access).
+            ProviderConfig(id: "openrouter", enabled: false),
+            ProviderConfig(id: "deepseek", enabled: false),
+            ProviderConfig(id: "zai", enabled: false),
+            ProviderConfig(id: "claude", enabled: false)
         ])
     }()
 
@@ -47,8 +53,16 @@ struct ProvidersStore {
         guard let url = try? defaultURL() else { return defaultDocument }
         guard let data = try? Data(contentsOf: url) else { return defaultDocument }
         let decoder = JSONDecoder()
-        guard let doc = try? decoder.decode(ProvidersDocument.self, from: data) else {
+        guard var doc = try? decoder.decode(ProvidersDocument.self, from: data) else {
             return defaultDocument
+        }
+        // Migration: append any known provider missing from an older
+        // providers.json (e.g. the CodexBar-ported ones) so they show up in
+        // Settings. New entries inherit the default's `enabled` flag (off).
+        let existing = Set(doc.providers.map(\.id))
+        let missing = defaultDocument.providers.filter { !existing.contains($0.id) }
+        if !missing.isEmpty {
+            doc.providers.append(contentsOf: missing)
         }
         return doc
     }

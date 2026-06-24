@@ -61,6 +61,9 @@ final class SettingsStore: ObservableObject {
     /// MiniMax API host region: "io" (global) or "com" (mainland China).
     /// `MiniMaxProvider` reads the same UserDefaults key directly.
     @AppStorage(MiniMaxRegion.defaultsKey) var minimaxRegion: String = MiniMaxRegion.io.rawValue
+    /// Z.ai / GLM API host region (global vs BigModel CN). `ZaiProvider` reads
+    /// the same UserDefaults key directly.
+    @AppStorage(ZaiRegion.defaultsKey) var zaiRegion: String = ZaiRegion.global.rawValue
     /// Which Codex window drives the menu bar percent. `MenuBarIconRenderer`
     /// reads the same UserDefaults key directly.
     @AppStorage(CodexMenuBarMetric.defaultsKey) var codexMenuBarMetric: String = CodexMenuBarMetric.automatic.rawValue

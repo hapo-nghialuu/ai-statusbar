@@ -471,6 +471,28 @@ struct ProvidersPane: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
             }
+
+            if row.id == "zai" {
+                SettingsRowDivider()
+                HStack(spacing: 12) {
+                    Text("Khu vực API")
+                        .font(.system(size: 13, weight: .semibold))
+                    Spacer(minLength: 8)
+                    Picker("", selection: Binding(
+                        get: { settings.zaiRegion },
+                        set: { settings.zaiRegion = $0; Task { await quota.refresh() } }
+                    )) {
+                        ForEach(ZaiRegion.allCases) { r in
+                            Text(r.displayName).tag(r.rawValue)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(width: 170)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+            }
         }
     }
 
@@ -520,6 +542,20 @@ struct ProvidersPane: View {
             ].compactMap { $0 }
         case "minimax":
             return [DashboardLink(title: "Trang Token Plan", icon: "chart.bar", url: MiniMaxRegion.current.dashboardURL)]
+        case "openrouter":
+            return [
+                u("https://openrouter.ai/settings/credits").map { DashboardLink(title: "Tín dụng OpenRouter", icon: "chart.bar", url: $0) },
+                u("https://openrouter.ai/keys").map { DashboardLink(title: "API keys", icon: "key", url: $0) },
+            ].compactMap { $0 }
+        case "deepseek":
+            return [DashboardLink(title: "Số dư DeepSeek", icon: "chart.bar",
+                                  url: URL(string: "https://platform.deepseek.com/usage")!)]
+        case "zai":
+            return [DashboardLink(title: "Coding Plan", icon: "chart.bar",
+                                  url: URL(string: "https://z.ai/manage-apikey/coding-plan/personal/my-plan")!)]
+        case "claude":
+            return [DashboardLink(title: "Trạng thái Anthropic", icon: "waveform.path.ecg",
+                                  url: URL(string: "https://status.anthropic.com/")!)]
         default:
             return []
         }
@@ -573,6 +609,9 @@ struct ProvidersPane: View {
         case "minimax": "MiniMax"
         case "hapo": row.displayName ?? "Hapo Hub"
         case "claude": "Claude"
+        case "openrouter": "OpenRouter"
+        case "deepseek": "DeepSeek"
+        case "zai": "Z.ai / GLM"
         default: row.displayName ?? row.id
         }
     }

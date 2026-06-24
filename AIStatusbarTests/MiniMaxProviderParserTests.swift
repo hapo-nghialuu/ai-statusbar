@@ -218,3 +218,115 @@ final class CodexBarConfigStoreTests: XCTestCase {
                        home.appendingPathComponent(".config/codexbar/config.json"))
     }
 }
+
+// MARK: - Ported providers (parser-only, no network)
+
+final class OpenRouterProviderTests: XCTestCase {
+    func testParseCreditsWindow() {
+        let json = #"{"data":{"total_credits":10.0,"total_usage":2.5}}"#.data(using: .utf8)!
+        let s = OpenRouterProvider(keychain: KeychainService()).parse(json, accountLabel: "u")
+        XCTAssertNil(s.error)
+        XCTAssertEqual(s.windows.count, 1)
+        XCTAssertEqual(s.windows[0].usedPct, 25)        // 2.5 / 10 = 25%
+        XCTAssertEqual(s.windows[0].remainingPct, 75)
+        XCTAssertEqual(s.creditsRemaining, 7.5)
+    }
+
+    func testParseZeroCredits() {
+        let json = #"{"data":{"total_credits":0,"total_usage":0}}"#.data(using: .utf8)!
+        let s = OpenRouterProvider(keychain: KeychainService()).parse(json, accountLabel: "u")
+        XCTAssertEqual(s.windows.first?.usedPct, 0)     // no divide-by-zero
+    }
+
+    func testParseMalformed() {
+        let s = OpenRouterProvider(keychain: KeychainService()).parse(Data("x".utf8), accountLabel: "u")
+        XCTAssertEqual(s.error, "Response thiếu trường")
+    }
+}
+
+final class DeepSeekProviderTests: XCTestCase {
+    func testParseBalance() {
+        let json = #"{"is_available":true,"balance_infos":[{"currency":"USD","total_balance":"12.34"}]}"#
+            .data(using: .utf8)!
+        let s = DeepSeekProvider(keychain: KeychainService()).parse(json, accountLabel: "u")
+        XCTAssertNil(s.error)
+        XCTAssertEqual(s.creditsRemaining, 12.34)
+        XCTAssertEqual(s.windows.first?.subtitle, "$12.34")
+    }
+
+    func testParseCNY() {
+        let json = #"{"is_available":true,"balance_infos":[{"currency":"CNY","total_balance":"88.00"}]}"#
+            .data(using: .utf8)!
+        let s = DeepSeekProvider(keychain: KeychainService()).parse(json, accountLabel: "u")
+        XCTAssertEqual(s.windows.first?.subtitle, "¥88.00")
+    }
+
+    func testParseEmptyInfos() {
+        let json = #"{"is_available":true,"balance_infos":[]}"#.data(using: .utf8)!
+        let s = DeepSeekProvider(keychain: KeychainService()).parse(json, accountLabel: "u")
+        XCTAssertEqual(s.error, "Không có thông tin số dư")
+    }
+}
+
+final class ZaiProviderTests: XCTestCase {
+    func testParseLimits() {
+        let json = #"""
+        {"code":200,"msg":"ok","success":true,"data":{"plan_name":"GLM Max",
+        "limits":[{"type":"TIME_LIMIT","unit":3,"number":5,"percentage":40,"next_reset_time":1750000000000},
+        {"type":"TOKENS_LIMIT","unit":0,"number":0,"percentage":10}]}}
+        """#.data(using: .utf8)!
+        let s = ZaiProvider(keychain: KeychainService()).parse(json, accountLabel: "u")
+        XCTAssertNil(s.error)
+        XCTAssertEqual(s.windows.count, 2)
+        XCTAssertEqual(s.windows[0].label, "5 giờ")
+        XCTAssertEqual(s.windows[0].remainingPct, 60)
+        XCTAssertNotNil(s.windows[0].resetDate)
+        XCTAssertEqual(s.windows[1].label, "Tokens")
+        XCTAssertEqual(s.planName, "GLM Max")
+    }
+
+    func testParseLogicalError() {
+        let json = #"{"code":401,"msg":"unauthorized","success":false,"data":null}"#.data(using: .utf8)!
+        let s = ZaiProvider(keychain: KeychainService()).parse(json, accountLabel: "u")
+        XCTAssertEqual(s.error, "unauthorized")
+    }
+
+    func testLabelMapping() {
+        XCTAssertEqual(ZaiProvider.label(type: "TIME_LIMIT", unit: 3, number: 5), "5 giờ")
+        XCTAssertEqual(ZaiProvider.label(type: "TIME_LIMIT", unit: 1, number: 7), "7 ngày")
+        XCTAssertEqual(ZaiProvider.label(type: "TIME_LIMIT", unit: 6, number: 1), "Tuần")
+        XCTAssertEqual(ZaiProvider.label(type: "TOKENS_LIMIT", unit: 0, number: 0), "Tokens")
+    }
+}
+
+final class ClaudeProviderTests: XCTestCase {
+    func testParseUsageWindows() {
+        let json = #"""
+        {"five_hour":{"utilization":30,"resets_at":"2026-07-01T00:00:00Z"},
+        "seven_day":{"utilization":72,"resets_at":"2026-07-05T00:00:00Z"}}
+        """#.data(using: .utf8)!
+        let s = ClaudeProvider().parse(json, accountLabel: nil)
+        XCTAssertNil(s.error)
+        XCTAssertEqual(s.windows.count, 2)
+        XCTAssertEqual(s.windows[0].label, "5 giờ")
+        XCTAssertEqual(s.windows[0].remainingPct, 70)
+        XCTAssertEqual(s.windows[1].label, "Tuần")
+        XCTAssertEqual(s.windows[1].remainingPct, 28)
+        XCTAssertNotNil(s.windows[0].resetDate)
+    }
+
+    func testParseEmptyThrowsErrorStatus() {
+        let json = #"{}"#.data(using: .utf8)!
+        let s = ClaudeProvider().parse(json, accountLabel: nil)
+        XCTAssertEqual(s.error, "Claude chưa có dữ liệu quota")
+    }
+
+    func testTokenFromKeychainJSON() {
+        let json = #"{"claudeAiOauth":{"accessToken":"sk-ant-oat-abc"}}"#.data(using: .utf8)!
+        XCTAssertEqual(ClaudeProvider.tokenFromKeychainJSON(json), "sk-ant-oat-abc")
+    }
+
+    func testTokenFromKeychainJSONMissing() {
+        XCTAssertNil(ClaudeProvider.tokenFromKeychainJSON(Data("{}".utf8)))
+    }
+}

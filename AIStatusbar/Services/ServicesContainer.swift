@@ -51,6 +51,15 @@ final class ServicesContainer: ObservableObject {
                     config: hapoConfig,
                     keychain: ks
                 ))
+            } else if cfg.id == "openrouter" {
+                providers.append(OpenRouterProvider(keychain: ks))
+            } else if cfg.id == "deepseek" {
+                providers.append(DeepSeekProvider(keychain: ks))
+            } else if cfg.id == "zai" {
+                providers.append(ZaiProvider(keychain: ks))
+            } else if cfg.id == "claude" {
+                // Zero-config: reads the Claude Code OAuth token from the Keychain.
+                providers.append(ClaudeProvider())
             }
         }
         // If providers.json is missing/empty (first launch before any UI save),
