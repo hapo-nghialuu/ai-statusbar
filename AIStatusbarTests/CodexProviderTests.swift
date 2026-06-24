@@ -98,6 +98,36 @@ final class CodexProviderTests: XCTestCase {
         XCTAssertEqual(windows[1].remainingPct, 92)
     }
 
+    func testDecodeCreditsNumber() throws {
+        let json = #"{"plan_type":"plus","credits":{"balance":12.5}}"#.data(using: .utf8)!
+        let usage = try JSONDecoder().decode(CodexUsageResponse.self, from: json)
+        XCTAssertEqual(usage.credits?.balance, 12.5)
+    }
+
+    func testDecodeCreditsString() throws {
+        // Balance may arrive as a string; decode leniently.
+        let json = #"{"credits":{"balance":"0"}}"#.data(using: .utf8)!
+        let usage = try JSONDecoder().decode(CodexUsageResponse.self, from: json)
+        XCTAssertEqual(usage.credits?.balance, 0)
+    }
+
+    func testDecodeNoCredits() throws {
+        // Absent credits block stays nil (backward-compatible with old payloads).
+        let usage = try JSONDecoder().decode(CodexUsageResponse.self, from: usageJSON)
+        XCTAssertNil(usage.credits)
+    }
+
+    func testMenuBarMetricFilter() {
+        let session = QuotaWindow(label: "5 giờ", usedPct: 1, remainingPct: 99)
+        let weekly = QuotaWindow(label: "Tuần", usedPct: 7, remainingPct: 93)
+        let all = [session, weekly]
+        XCTAssertEqual(CodexMenuBarMetric.automatic.filter(all).count, 2)
+        XCTAssertEqual(CodexMenuBarMetric.session.filter(all).map(\.label), ["5 giờ"])
+        XCTAssertEqual(CodexMenuBarMetric.weekly.filter(all).map(\.label), ["Tuần"])
+        // Fallback: chosen window absent → keep all rather than show nothing.
+        XCTAssertEqual(CodexMenuBarMetric.weekly.filter([session]).map(\.label), ["5 giờ"])
+    }
+
     // MARK: - fetch()
 
     func testFetchHappyPath() throws {
@@ -115,7 +145,8 @@ final class CodexProviderTests: XCTestCase {
         }
         defer { StubURLProtocol.reset() }
 
-        let p = CodexProvider(session: session, authURL: url)
+        let p = CodexProvider(session: session, authURL: url,
+                              statusProbe: { nil }, versionProbe: { nil })
         let exp = expectation(description: "fetch")
         var status: ProviderStatus?
         Task { status = try? await p.fetch(); exp.fulfill() }
@@ -139,7 +170,8 @@ final class CodexProviderTests: XCTestCase {
         }
         defer { StubURLProtocol.reset() }
 
-        let p = CodexProvider(session: session, authURL: url)
+        let p = CodexProvider(session: session, authURL: url,
+                              statusProbe: { nil }, versionProbe: { nil })
         let exp = expectation(description: "fetch")
         var status: ProviderStatus?
         Task { status = try? await p.fetch(); exp.fulfill() }

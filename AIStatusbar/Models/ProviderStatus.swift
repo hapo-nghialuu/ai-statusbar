@@ -49,17 +49,44 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
     /// nil only if no token is configured.
     let accountLabel: String?
 
+    // MARK: - Optional provider detail overlays
+    //
+    // Enrichments surfaced in the providers detail panel. Codex populates them;
+    // other providers leave them nil. All optional + defaulted so old cached
+    // snapshots (without these keys) still decode.
+
+    /// Subscription plan, e.g. "plus" / "pro" (Codex `plan_type`).
+    let planType: String?
+    /// Remaining credit balance (Codex `credits.balance`). nil when absent.
+    let creditsRemaining: Double?
+    /// Detected CLI version string, e.g. "codex-cli 0.140.0-alpha.19".
+    let version: String?
+    /// Provider service-status text, e.g. "All Systems Operational".
+    let serviceStatus: String?
+    /// Status severity: "none" / "minor" / "major" / "critical" (drives color).
+    let serviceStatusLevel: String?
+
     init(id: String,
          displayName: String,
          windows: [QuotaWindow],
          lastUpdated: Date,
          error: String? = nil,
-         accountLabel: String? = nil) {
+         accountLabel: String? = nil,
+         planType: String? = nil,
+         creditsRemaining: Double? = nil,
+         version: String? = nil,
+         serviceStatus: String? = nil,
+         serviceStatusLevel: String? = nil) {
         self.id = id
         self.displayName = displayName
         self.windows = windows
         self.lastUpdated = lastUpdated
         self.error = error
         self.accountLabel = accountLabel
+        self.planType = planType
+        self.creditsRemaining = creditsRemaining
+        self.version = version
+        self.serviceStatus = serviceStatus
+        self.serviceStatusLevel = serviceStatusLevel
     }
 }

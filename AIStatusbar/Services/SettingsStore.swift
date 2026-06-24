@@ -57,6 +57,9 @@ final class SettingsStore: ObservableObject {
     /// MiniMax API host region: "io" (global) or "com" (mainland China).
     /// `MiniMaxProvider` reads the same UserDefaults key directly.
     @AppStorage(MiniMaxRegion.defaultsKey) var minimaxRegion: String = MiniMaxRegion.io.rawValue
+    /// Which Codex window drives the menu bar percent. `MenuBarIconRenderer`
+    /// reads the same UserDefaults key directly.
+    @AppStorage(CodexMenuBarMetric.defaultsKey) var codexMenuBarMetric: String = CodexMenuBarMetric.automatic.rawValue
 
     var language: Language {
         get { Language(rawValue: appLanguage) ?? .system }

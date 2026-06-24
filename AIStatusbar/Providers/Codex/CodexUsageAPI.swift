@@ -2,27 +2,52 @@ import Foundation
 
 /// Codex usage payload from `chatgpt.com/backend-api/wham/usage`.
 ///
-/// Trimmed port of CodexBar's `CodexUsageResponse`: we keep only `plan_type`
-/// and the `rate_limit` windows (the data this app surfaces). Credits and
-/// `additional_rate_limits` are intentionally dropped (YAGNI).
+/// Trimmed port of CodexBar's `CodexUsageResponse`: we keep `plan_type`, the
+/// `rate_limit` windows, and `credits` (all surfaced in the providers panel).
+/// `additional_rate_limits` is still dropped (YAGNI).
 struct CodexUsageResponse: Decodable, Equatable {
     let planType: String?
     let rateLimit: RateLimit?
+    let credits: Credits?
 
     enum CodingKeys: String, CodingKey {
         case planType = "plan_type"
         case rateLimit = "rate_limit"
+        case credits
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         self.planType = try? c.decodeIfPresent(String.self, forKey: .planType)
         self.rateLimit = try? c.decodeIfPresent(RateLimit.self, forKey: .rateLimit)
+        self.credits = try? c.decodeIfPresent(Credits.self, forKey: .credits)
     }
 
-    init(planType: String?, rateLimit: RateLimit?) {
+    init(planType: String?, rateLimit: RateLimit?, credits: Credits? = nil) {
         self.planType = planType
         self.rateLimit = rateLimit
+        self.credits = credits
+    }
+
+    /// Credit balance block. `balance` may arrive as a JSON number or a string,
+    /// so decode leniently (matches CodexBar's `CreditDetails`).
+    struct Credits: Decodable, Equatable {
+        let balance: Double?
+
+        enum CodingKeys: String, CodingKey { case balance }
+
+        init(balance: Double?) { self.balance = balance }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            if let d = try? c.decode(Double.self, forKey: .balance) {
+                self.balance = d
+            } else if let s = try? c.decode(String.self, forKey: .balance) {
+                self.balance = Double(s)
+            } else {
+                self.balance = nil
+            }
+        }
     }
 
     struct RateLimit: Decodable, Equatable {

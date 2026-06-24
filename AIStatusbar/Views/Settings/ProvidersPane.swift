@@ -137,7 +137,7 @@ struct ProvidersPane: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(displayName(for: row))
                     .font(.system(size: 16, weight: .semibold))
-                Text(updatedSubtitle(for: row.id))
+                Text(headerSubtitle(for: row))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -161,8 +161,21 @@ struct ProvidersPane: View {
         let s = status(for: row.id)
         return Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
             infoRow("Trạng thái", row.enabled ? "Đang bật" : "Đang tắt")
+            if row.id == "codex" {
+                // OAuth-only auth (token read from ~/.codex/auth.json).
+                infoRow("Nguồn", "OAuth")
+            }
+            if let plan = s?.planType, !plan.isEmpty {
+                infoRow("Gói", plan.capitalized)
+            }
             if let label = s?.accountLabel, !label.isEmpty {
                 infoRow("Tài khoản", label)
+            }
+            if let version = s?.version, !version.isEmpty {
+                infoRow("Phiên bản", version)
+            }
+            if let svc = s?.serviceStatus, !svc.isEmpty {
+                serviceStatusRow(svc, level: s?.serviceStatusLevel)
             }
             if let err = s?.error {
                 infoRow("Lỗi", err)
@@ -183,6 +196,31 @@ struct ProvidersPane: View {
         }
     }
 
+    /// Service-status row with a severity dot (green/yellow/orange/red).
+    private func serviceStatusRow(_ text: String, level: String?) -> some View {
+        GridRow {
+            Text("Tình trạng").gridColumnAlignment(.leading)
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(serviceStatusColor(level))
+                    .frame(width: 7, height: 7)
+                Text(text)
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+            }
+        }
+    }
+
+    private func serviceStatusColor(_ level: String?) -> Color {
+        switch level {
+        case "none": return .green
+        case "minor": return .yellow
+        case "major": return .orange
+        case "critical": return .red
+        default: return .secondary
+        }
+    }
+
     @ViewBuilder
     private func usageSection(_ row: ProviderConfig) -> some View {
         let s = status(for: row.id)
@@ -191,6 +229,10 @@ struct ProvidersPane: View {
                 ForEach(Array(s.windows.enumerated()), id: \.element.id) { i, w in
                     quotaWindowRow(w)
                     if i < s.windows.count - 1 { SettingsRowDivider() }
+                }
+                if let credits = s.creditsRemaining {
+                    SettingsRowDivider()
+                    creditsRow(credits)
                 }
             } else {
                 Text(row.enabled ? "Chưa có dữ liệu — bấm làm mới." : "Đang tắt — không có dữ liệu.")
@@ -237,6 +279,29 @@ struct ProvidersPane: View {
         .padding(.vertical, 10)
     }
 
+    /// Remaining credit balance line (Codex). Shown only when the provider
+    /// reports a credits figure.
+    private func creditsRow(_ credits: Double) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("CREDITS")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .tracking(0.5)
+            Spacer()
+            Text(creditsText(credits))
+                .font(.system(size: 12, weight: .semibold).monospacedDigit())
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    private func creditsText(_ credits: Double) -> String {
+        let amount = credits.truncatingRemainder(dividingBy: 1) == 0
+            ? String(Int(credits))
+            : String(format: "%.2f", credits)
+        return credits <= 0 ? "Hết" : "\(amount) còn lại"
+    }
+
     // MARK: - Settings section (token / account label / login status)
 
     @ViewBuilder
@@ -278,6 +343,33 @@ struct ProvidersPane: View {
                     keychain: keychain,
                     onSaved: { Task { await quota.refresh() } }
                 )
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+            }
+
+            if row.id == "codex" {
+                SettingsRowDivider()
+                HStack(spacing: 12) {
+                    Text("Menu bar hiển thị")
+                        .font(.system(size: 13, weight: .semibold))
+                    Spacer(minLength: 8)
+                    Picker("", selection: Binding(
+                        get: { settings.codexMenuBarMetric },
+                        set: {
+                            settings.codexMenuBarMetric = $0
+                            // Re-fetch so the menu bar rebuilds its frames with
+                            // the newly selected window.
+                            NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
+                        }
+                    )) {
+                        ForEach(CodexMenuBarMetric.allCases) { m in
+                            Text(m.displayName).tag(m.rawValue)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(width: 150)
+                }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
             }
@@ -415,6 +507,16 @@ struct ProvidersPane: View {
         if s.error != nil { return "Lỗi" }
         if let first = s.windows.first { return "Còn \(first.remainingPct)%" }
         return "Đang tải…"
+    }
+
+    /// Header subtitle: prefix the CLI version when known (Codex), e.g.
+    /// "codex-cli 0.140.0 • 2 giây trước".
+    private func headerSubtitle(for row: ProviderConfig) -> String {
+        let updated = updatedSubtitle(for: row.id)
+        if let version = status(for: row.id)?.version, !version.isEmpty {
+            return "\(version) • \(updated)"
+        }
+        return updated
     }
 
     private func updatedSubtitle(for id: String) -> String {

@@ -26,10 +26,15 @@ enum MenuBarIconRenderer {
     static func frames(from statuses: [ProviderStatus]) -> [Frame] {
         var frames: [Frame] = [.bird]
         for status in statuses where !status.windows.isEmpty {
+            // Codex lets the user pick which window drives the bar; other
+            // providers always show all their windows.
+            let windows = status.id == "codex"
+                ? CodexMenuBarMetric.current.filter(status.windows)
+                : status.windows
             frames.append(.provider(
                 id: status.id,
                 name: status.displayName,
-                percents: status.windows.map { $0.remainingPct }
+                percents: windows.map { $0.remainingPct }
             ))
         }
         return frames
