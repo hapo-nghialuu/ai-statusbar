@@ -152,6 +152,16 @@ struct ConfigPanel: View {
                     config.lastError = "API key quá dài (max 256)"
                     return
                 }
+                // Claude API key is intentionally stored in the macOS Keychain,
+                // not the CodexBar config file. This panel is a convenience
+                // form for the user's `~/.claude.json` (Claude Code CLI) —
+                // BirdNion has no "claude" provider of its own and the
+                // placeholder `KEYCHAIN_REF:...` written below relies on the
+                // Claude CLI reading the same Keychain entry. CodexBar
+                // likewise stores Claude tokens in its own Keychain, not in
+                // its shared `~/.codexbar/config.json`, so there is no
+                // pattern to align with. Do not "migrate" this to
+                // CodexBarConfigStore — it would break Claude CLI.
                 try keychain.save(account: "anthropic", secret: pendingApiKey)
             }
             var env = (settings["env"] as? [String: Any]) ?? [:]
