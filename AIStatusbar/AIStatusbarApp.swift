@@ -44,6 +44,5 @@ struct AIStatusbarApp: App {
                 .environmentObject(config)
                 .environmentObject(quota)
         }
-        .windowResizability(.contentSize)
     }
 }

@@ -48,7 +48,7 @@ struct ProvidersPane: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 6)
-        .frame(width: 240, alignment: .top)
+        .frame(width: 200, alignment: .top)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(nsColor: .controlBackgroundColor))
