@@ -148,6 +148,8 @@ struct ProviderTabs: View {
         switch id {
         case "minimax":
             Image("MiniMaxLogo").resizable().interpolation(.high)
+        case "codex":
+            Image("CodexLogo").resizable().interpolation(.high)
         case "hapo":
             Image("HapoLogo").resizable().interpolation(.high)
         default:
