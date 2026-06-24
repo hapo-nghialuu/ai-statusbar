@@ -96,21 +96,14 @@ final class MiniMaxProvider: QuotaProvider {
     }
 
     func fetch() async throws -> ProviderStatus {
-        let token: String
-        do {
-            token = try keychain.read(account: "minimax")
-        } catch KeychainError.itemNotFound {
+        // Token resolution mirrors CodexBar: env vars → ~/.codexbar config file.
+        // Fall back to the legacy Keychain entry so tokens saved before the
+        // config-file switch keep working.
+        let token = CodexBarConfigStore.minimaxToken() ?? (try? keychain.read(account: "minimax"))
+        guard let token, !token.isEmpty else {
             return ProviderStatus(id: id, displayName: displayName, windows: [],
                                   lastUpdated: Date(),
                                   error: "Chưa cấu hình token")
-        } catch let e as KeychainError {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Keychain error: \(e)")
-        } catch {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "\(error)")
         }
         let accountLabel = Self.deriveAccountLabel(override: override(), token: token)
 

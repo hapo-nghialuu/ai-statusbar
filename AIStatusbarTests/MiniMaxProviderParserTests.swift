@@ -108,3 +108,79 @@ final class MiniMaxProviderParserTests: XCTestCase {
         return c
     }
 }
+
+/// Isolated tests for the shared CodexBar config file (token interop store).
+/// All file I/O goes to a temp URL so nothing touches the real
+/// `~/.codexbar/config.json`.
+final class CodexBarConfigStoreTests: XCTestCase {
+    private func tempURL() -> URL {
+        FileManager.default.temporaryDirectory
+            .appendingPathComponent("codexbar-cfg-\(UUID().uuidString)")
+            .appendingPathComponent("config.json")
+    }
+
+    func testWriteThenReadRoundTrip() throws {
+        let url = tempURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        try CodexBarConfigStore.setAPIKey("sk-test-123", provider: "minimax", url: url)
+        XCTAssertEqual(CodexBarConfigStore.apiKey(provider: "minimax", url: url), "sk-test-123")
+    }
+
+    func testUpsertUpdatesExistingWithoutDuplicating() throws {
+        let url = tempURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        try CodexBarConfigStore.setAPIKey("first", provider: "minimax", url: url)
+        try CodexBarConfigStore.setAPIKey("second", provider: "minimax", url: url)
+        XCTAssertEqual(CodexBarConfigStore.apiKey(provider: "minimax", url: url), "second")
+        let cfg = CodexBarConfigStore.read(url: url)
+        XCTAssertEqual(cfg?.providers?.filter { $0.id == "minimax" }.count, 1)
+    }
+
+    func testPreservesOtherProviders() throws {
+        let url = tempURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        try CodexBarConfigStore.setAPIKey("codex-key", provider: "codex", url: url)
+        try CodexBarConfigStore.setAPIKey("minimax-key", provider: "minimax", url: url)
+        // Writing one provider must not drop the other.
+        XCTAssertEqual(CodexBarConfigStore.apiKey(provider: "codex", url: url), "codex-key")
+        XCTAssertEqual(CodexBarConfigStore.apiKey(provider: "minimax", url: url), "minimax-key")
+    }
+
+    func testTrimsWhitespace() throws {
+        let url = tempURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        try CodexBarConfigStore.setAPIKey("  sk-padded  ", provider: "minimax", url: url)
+        XCTAssertEqual(CodexBarConfigStore.apiKey(provider: "minimax", url: url), "sk-padded")
+    }
+
+    func testMissingFileReturnsNil() {
+        let url = tempURL()   // never written
+        XCTAssertNil(CodexBarConfigStore.read(url: url))
+        XCTAssertNil(CodexBarConfigStore.apiKey(provider: "minimax", url: url))
+    }
+
+    // MARK: - Path resolution
+
+    func testConfigURLEnvOverrideWins() {
+        let url = CodexBarConfigStore.configURL(env: ["CODEXBAR_CONFIG": "/tmp/custom/cfg.json"])
+        XCTAssertEqual(url.path, "/tmp/custom/cfg.json")
+    }
+
+    func testConfigURLPrefersLegacyWhenOnlyLegacyPresent() throws {
+        let home = FileManager.default.temporaryDirectory
+            .appendingPathComponent("home-\(UUID().uuidString)")
+        let legacy = home.appendingPathComponent(".codexbar/config.json")
+        try FileManager.default.createDirectory(at: legacy.deletingLastPathComponent(),
+                                                withIntermediateDirectories: true)
+        try "{}".write(to: legacy, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: home) }
+        XCTAssertEqual(CodexBarConfigStore.configURL(home: home, env: [:]), legacy)
+    }
+
+    func testConfigURLDefaultsToXDGWhenNeitherPresent() {
+        let home = FileManager.default.temporaryDirectory
+            .appendingPathComponent("home-\(UUID().uuidString)")
+        XCTAssertEqual(CodexBarConfigStore.configURL(home: home, env: [:]),
+                       home.appendingPathComponent(".config/codexbar/config.json"))
+    }
+}

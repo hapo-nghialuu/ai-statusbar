@@ -55,15 +55,13 @@ final class HapoHubProvider: QuotaProvider {
 
     func fetch() async throws -> ProviderStatus {
         // 1. Token read + validation.
-        let token: String
-        do {
-            token = try keychain.read(account: config.id)
-        } catch KeychainError.itemNotFound {
+        //    Resolution mirrors CodexBar (and MiniMax): the shared config
+        //    file first, then the legacy Keychain entry so tokens saved
+        //    before the config-file switch keep working.
+        let token = CodexBarConfigStore.apiKey(provider: config.id)
+            ?? (try? keychain.read(account: config.id))
+        guard let token, !token.isEmpty else {
             return errorStatus("Chưa cấu hình token")
-        } catch let e as KeychainError {
-            return errorStatus("Keychain error: \(e)")
-        } catch {
-            return errorStatus("\(error)")
         }
 
         if token.unicodeScalars.contains(where: { !Self.tokenCharacterSet.contains($0) }) {

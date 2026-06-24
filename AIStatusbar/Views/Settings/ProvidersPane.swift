@@ -409,7 +409,6 @@ struct ProvidersPane: View {
             } else {
                 TokenField(
                     providerID: row.id,
-                    keychain: keychain,
                     onSaved: { Task { await quota.refresh() } }
                 )
                 .padding(.horizontal, 14)
@@ -650,7 +649,6 @@ struct ProviderLogoView: View {
 /// bearer token (everything except zero-config Codex).
 private struct TokenField: View {
     let providerID: String
-    let keychain: KeychainService
     let onSaved: () -> Void
 
     @State private var token = ""
@@ -667,12 +665,14 @@ private struct TokenField: View {
                 Button("Lưu") {
                     guard !token.isEmpty else { return }
                     do {
-                        try keychain.save(account: providerID, secret: token)
+                        // Save to the shared CodexBar config file (interops with
+                        // CodexBar), same as where the providers read it from.
+                        try CodexBarConfigStore.setAPIKey(token, provider: providerID)
                         token = ""
-                        banner = "Đã lưu token."
+                        banner = "Đã lưu vào config CodexBar."
                         onSaved()
                     } catch {
-                        banner = "Lỗi Keychain: \(error.localizedDescription)"
+                        banner = "Lỗi lưu: \(error.localizedDescription)"
                     }
                 }
                 .controlSize(.small)
