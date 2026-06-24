@@ -42,14 +42,23 @@ struct PopoverView: View {
         .frame(width: 420)
         .background(VocabbyTheme.background)
         .onReceive(NotificationCenter.default.publisher(for: .openSettings)) { _ in
-            withAnimation(.easeInOut(duration: 0.15)) { section = .config }
+            switchTo(.config)
         }
+    }
+
+    /// Single place that swaps the popover section. We intentionally switch
+    /// WITHOUT animation: animating the height while the panel auto-resizes to
+    /// its content (the hosting controller's preferredContentSize) drove
+    /// NSHostingView's autoresizing constraints into an NSISEngine recursion
+    /// that crashed the whole app (reproduced: animated = crash, instant = ok).
+    private func switchTo(_ s: Section) {
+        section = s
     }
 
     private var inlineBar: some View {
         HStack(spacing: 6) {
             Button {
-                withAnimation(.easeInOut(duration: 0.15)) { section = .quota }
+                switchTo(.quota)
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
