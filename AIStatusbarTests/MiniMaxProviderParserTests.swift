@@ -3,7 +3,8 @@ import XCTest
 
 final class MiniMaxProviderParserTests: XCTestCase {
     private let happyJSON = """
-    {"model_remains":[{"model_name":"general",
+    {"base_resp":{"status_code":0,"status_msg":"success"},
+    "model_remains":[{"model_name":"general",
     "current_interval_total_count":100,"current_interval_usage_count":13,
     "current_interval_remaining_percent":87,
     "current_weekly_total_count":700,"current_weekly_usage_count":80,
