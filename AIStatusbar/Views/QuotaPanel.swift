@@ -13,7 +13,8 @@ struct QuotaOverview: View {
     @State private var selectedProviderId: String? = nil
 
     var body: some View {
-        Group {
+        ZStack {
+            VocabbyTheme.background.ignoresSafeArea()
             if quota.statuses.isEmpty {
                 VStack(spacing: 8) {
                     ProgressView().controlSize(.small).tint(VocabbyTheme.blue)
@@ -21,9 +22,9 @@ struct QuotaOverview: View {
                         .font(.system(size: 12))
                         .foregroundStyle(VocabbyTheme.secondary)
                 }
-                .frame(maxWidth: .infinity, minHeight: 160)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     // Default selection: first provider (kept across refreshes
                     // when the same id is still present).
                     let selected = effectiveSelectedId()
@@ -36,20 +37,20 @@ struct QuotaOverview: View {
                     )
                     if let s = quota.statuses.first(where: { $0.id == selected })
                         ?? quota.statuses.first {
-                        ProviderHeaderCard(status: s)
-                        ProviderCard(status: s)
+                        VStack(alignment: .leading, spacing: 6) {
+                            ProviderHeaderCard(status: s)
+                            ProviderCard(status: s)
+                        }
                     }
-                    // No Spacer: the view hugs its content and the popover
-                    // auto-sizes to this height, so the action list sits
-                    // directly under the cards with no dead gap.
+                    // Spacer pushes the action list to the bottom of the
+                    // popover so cards above hug their content with no gap.
+                    Spacer(minLength: 0)
                     ActionsList()
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
             }
         }
-        .frame(maxWidth: .infinity)
-        .background(VocabbyTheme.background)
         .onAppear {
             if selectedProviderId == nil,
                let first = quota.statuses.first {
@@ -128,8 +129,8 @@ struct ProviderTabs: View {
                     Image("OriginalImage")
                         .resizable()
                         .interpolation(.high)
-                        .frame(width: 24, height: 24)
-                        .offset(x: 7, y: -7)
+                        .frame(width: 16, height: 16)
+                        .offset(x: 5, y: -5)
                 }
             }
             .overlay(
@@ -149,10 +150,6 @@ struct ProviderTabs: View {
             Image("MiniMaxLogo").resizable().interpolation(.high)
         case "hapo":
             Image("HapoLogo").resizable().interpolation(.high)
-        case "codex":
-            // Monochrome SVG silhouette tinted blue here (white on the menu bar).
-            Image("CodexLogo").resizable().interpolation(.high)
-                .foregroundStyle(VocabbyTheme.blue)
         default:
             Image(systemName: "circle")
         }
@@ -194,7 +191,7 @@ struct ProviderHeaderCard: View {
         // Heuristic by provider id; expand when more providers are added.
         switch status.id {
         case "minimax": return "Token Plan"
-        case "hapo":    return ""
+        case "hapo":    return "Hapo AI Hub"
         default:        return ""
         }
     }
@@ -206,8 +203,9 @@ struct ProviderHeaderCard: View {
             Image("ProviderLogo")
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 55, height: 55)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .frame(width: 50, height: 50)
+                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .offset(y: 5)
             VStack(alignment: .leading, spacing: 2) {
                 Text(status.displayName)
                     .font(.system(size: 14, weight: .semibold))
