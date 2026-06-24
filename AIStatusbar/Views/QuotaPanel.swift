@@ -152,6 +152,18 @@ struct ProviderTabs: View {
             Image("CodexLogo").resizable().interpolation(.high)
         case "hapo":
             Image("HapoLogo").resizable().interpolation(.high)
+        case "openrouter":
+            Image("OpenRouterLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.openRouter)
+        case "deepseek":
+            Image("DeepSeekLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.deepSeek)
+        case "zai":
+            Image("ZaiLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.zai)
+        case "claude":
+            Image("ClaudeLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.claude)
         default:
             Image(systemName: "circle")
         }
@@ -474,6 +486,25 @@ enum VocabbyTheme {
     static let yellowSoft = Color(red: 1.000, green: 0.902, blue: 0.612)   // #FFE69C
     static let track      = Color(red: 0.898, green: 0.906, blue: 0.918)   // #E5E7EB
     static let badge      = Color(red: 0.976, green: 0.980, blue: 0.984)   // #F9FAFB
+
+    // Per-provider brand tints for the monochrome template logos.
+    // Values mirror CodexBar's ProviderBranding.color.
+    static let openRouter = Color(red: 100 / 255, green: 103 / 255, blue: 242 / 255) // #6467F2
+    static let deepSeek   = Color(red: 0.32, green: 0.49, blue: 0.94)                // #527DF0
+    static let zai        = Color(red: 232 / 255, green: 90 / 255, blue: 106 / 255)  // #E85A6A
+    static let claude     = Color(red: 204 / 255, green: 124 / 255, blue: 94 / 255)  // #CC7C5E
+
+    /// Brand tint for a provider id; nil → caller falls back to default styling.
+    static func providerTint(_ id: String) -> Color? {
+        switch id {
+        case "codex": return blue
+        case "openrouter": return openRouter
+        case "deepseek": return deepSeek
+        case "zai": return zai
+        case "claude": return claude
+        default: return nil
+        }
+    }
 }
 
 // MARK: - Card modifier

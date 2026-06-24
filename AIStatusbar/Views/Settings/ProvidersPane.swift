@@ -682,6 +682,18 @@ struct ProviderLogoView: View {
         case "codex":
             Image("CodexLogo").resizable().interpolation(.high)
                 .foregroundStyle(VocabbyTheme.blue)
+        case "openrouter":
+            Image("OpenRouterLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.openRouter)
+        case "deepseek":
+            Image("DeepSeekLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.deepSeek)
+        case "zai":
+            Image("ZaiLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.zai)
+        case "claude":
+            Image("ClaudeLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.claude)
         default:
             Image(systemName: "circle.dotted")
                 .resizable()
