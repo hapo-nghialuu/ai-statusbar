@@ -129,6 +129,15 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
     /// doesn't expose this or the scrape failed. Surfaced in the Usage
     /// section as "Today: $X · NM tokens" + "Last 30 days: ..." lines.
     let cost: ProviderCostSnapshot?
+    /// Bag of Claude web-API extras (account identity from cookies + quota
+    /// fallback percentages). Carries everything that comes from
+    /// `ClaudeWebAPIFetcher.fetchUsage()` but does NOT belong on the OAuth
+    /// row — surfaced by `ClaudeProvider` so the panel can render account
+    /// info (email / org / login method) and fall back to cookie-derived
+    /// quota when OAuth fails. Other providers leave it nil.
+    /// Mirrors CodexBar's `ClaudeUsageSnapshot` minus the quota windows
+    /// (which we keep in `windows` for layout consistency across providers).
+    let webExtras: ClaudeWebExtras?
 
     init(id: String,
          displayName: String,
@@ -144,7 +153,8 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
          accountID: String? = nil,
          planName: String? = nil,
          resetCreditsAvailable: Int? = nil,
-         cost: ProviderCostSnapshot? = nil) {
+         cost: ProviderCostSnapshot? = nil,
+         webExtras: ClaudeWebExtras? = nil) {
         self.id = id
         self.displayName = displayName
         self.windows = windows
@@ -160,5 +170,82 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
         self.planName = planName
         self.resetCreditsAvailable = resetCreditsAvailable
         self.cost = cost
+        self.webExtras = webExtras
+    }
+}
+
+/// All non-quota-window extras that come from Claude's web/CLI sources,
+/// collected together so `ProviderStatus` doesn't grow 9 new fields. Each
+/// member is independently optional — `ClaudeWebAPIFetcher` may return
+/// partial data if some endpoints fail (e.g. account endpoint down).
+/// Matches CodexBar's `ClaudeUsageSnapshot` minus the windows.
+struct ClaudeWebExtras: Codable, Equatable, Sendable {
+    /// Account email from `claude.ai/api/account`. May differ from the OAuth
+    /// accountLabel when the user logged in via web but not via `claude login`.
+    let accountEmail: String?
+    /// Organization name from claude.ai (e.g. "Personal" / company name).
+    let accountOrganization: String?
+    /// Login method label (e.g. "Claude account" / "SSO" / "Admin API").
+    let loginMethod: String?
+    /// Session (5h) utilization as a percentage. Backup for `windows[0]` when
+    /// OAuth is unavailable.
+    let sessionPercentUsed: Double?
+    /// Weekly utilization as a percentage. Backup for `windows[1]`.
+    let weeklyPercentUsed: Double?
+    /// Opus-specific weekly utilization. Backup for `windows[2]`.
+    let opusPercentUsed: Double?
+    /// Named rate windows (Daily Routines, etc.) from web/CLI sources.
+    /// Each carries its own `RateWindow` plus a `title` for display.
+    let extraRateWindows: [ClaudeExtraRateWindow]
+    /// Identifier of the source that actually produced this data — "oauth",
+    /// "web", "cli", "api", or "auto:<strategy>". Used by the Settings UI to
+    /// show the user "Last fetch via: <source>" so they know the planner
+    /// picked for them.
+    let sourceLabel: String?
+
+    init(accountEmail: String? = nil,
+         accountOrganization: String? = nil,
+         loginMethod: String? = nil,
+         sessionPercentUsed: Double? = nil,
+         weeklyPercentUsed: Double? = nil,
+         opusPercentUsed: Double? = nil,
+         extraRateWindows: [ClaudeExtraRateWindow] = [],
+         sourceLabel: String? = nil) {
+        self.accountEmail = accountEmail
+        self.accountOrganization = accountOrganization
+        self.loginMethod = loginMethod
+        self.sessionPercentUsed = sessionPercentUsed
+        self.weeklyPercentUsed = weeklyPercentUsed
+        self.opusPercentUsed = opusPercentUsed
+        self.extraRateWindows = extraRateWindows
+        self.sourceLabel = sourceLabel
+    }
+}
+
+/// One named rate window surfaced as a separate row in the Claude panel
+/// (e.g. "Daily Routines"). Mirrors CodexBarCore's `NamedRateWindow` but
+/// copies the small subset BirdNion needs so the UI doesn't have to depend
+/// on CodexBarCore's concrete type.
+struct ClaudeExtraRateWindow: Codable, Equatable, Identifiable, Sendable {
+    let id: String
+    let title: String
+    let usedPercent: Int
+    let resetsAt: Date?
+    /// Reset description as parsed from the source (e.g. "Resets 4am").
+    let resetDescription: String?
+    let windowMinutes: Int?
+
+    init(id: String,
+         title: String,
+         usedPercent: Int,
+         resetsAt: Date? = nil,
+         resetDescription: String? = nil,
+         windowMinutes: Int? = nil) {
+        self.id = id
+        self.title = title
+        self.usedPercent = usedPercent
+        self.resetsAt = resetsAt
+        self.resetDescription = resetDescription
+        self.windowMinutes = windowMinutes
     }
 }
