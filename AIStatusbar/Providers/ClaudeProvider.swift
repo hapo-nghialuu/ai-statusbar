@@ -77,7 +77,7 @@ final class ClaudeProvider: QuotaProvider {
                 accountLabel: base.accountLabel,
                 planType: base.planType,
                 creditsRemaining: base.creditsRemaining,
-                version: base.version,
+                version: Self.detectedClaudeVersion(),
                 serviceStatus: status?.description,
                 serviceStatusLevel: status?.indicator,
                 accountID: base.accountID,
@@ -195,6 +195,24 @@ final class ClaudeProvider: QuotaProvider {
     }
 
     // MARK: - Service status (status.anthropic.com)
+
+    /// Cached output of `claude --version` so we don't spawn a process on
+    /// every quota fetch. Set to the version string the CLI returned, or
+    /// empty string when the binary is absent (so we still re-check, in case
+    /// the user installs it later). UI surfaces it as
+    /// `"2.1.185 (Claude Code)"` to match CodexBar.
+    private static var cachedClaudeVersion: String?
+
+    /// Detects the installed `claude` CLI version (memoized). Returns nil
+    /// when the binary isn't on PATH.
+    static func detectedClaudeVersion() -> String? {
+        if let cached = cachedClaudeVersion {
+            return cached.isEmpty ? nil : cached
+        }
+        let raw = ProviderVersionDetector.claudeVersion()
+        cachedClaudeVersion = raw ?? ""
+        return raw
+    }
 
     /// Best-effort fetch of Anthropic's public status. Mirrors Codex's
     /// `OpenAIServiceStatus` pattern: short timeout, never throws, returns nil

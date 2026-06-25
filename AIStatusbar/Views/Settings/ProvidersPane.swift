@@ -176,6 +176,9 @@ struct ProvidersPane: View {
             if row.id == "codex" {
                 // OAuth-only auth (token read from ~/.codex/auth.json).
                 infoRow("Nguồn", "OAuth")
+            } else if row.id == "claude" {
+                // OAuth token comes from the Claude Code Keychain item.
+                infoRow("Nguồn", "OAuth")
             }
             if let plan = s?.planType, !plan.isEmpty {
                 infoRow("Gói", plan.capitalized)

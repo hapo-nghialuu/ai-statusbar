@@ -386,3 +386,38 @@ final class ClaudeProviderTests: XCTestCase {
         XCTAssertNil(ClaudePlan.label(forSubscriptionType: "free", rateLimitTier: "free_tier"))
     }
 }
+
+// MARK: - ProviderVersionDetector
+
+final class ProviderVersionDetectorTests: XCTestCase {
+    /// Smoke test against the real `claude` binary. Skipped if the user
+    /// doesn't have it installed (CI without claude CLI).
+    func testClaudeVersionReadsBinary() throws {
+        guard let v = ProviderVersionDetector.claudeVersion() else {
+            throw XCTSkip("claude CLI not installed on this host")
+        }
+        XCTAssertFalse(v.isEmpty)
+        XCTAssertFalse(v.contains("\u{1B}"), "ANSI codes should be stripped")
+    }
+
+    func testLocateCodexBinary() throws {
+        guard let v = ProviderVersionDetector.codexVersion() else {
+            throw XCTSkip("codex CLI not installed on this host")
+        }
+        XCTAssertFalse(v.isEmpty)
+    }
+
+    /// `runVersion` against a missing binary should return nil (not crash).
+    func testRunVersionMissingBinaryReturnsNil() {
+        XCTAssertNil(ProviderVersionDetector.runVersionForTest(
+            path: "/nonexistent/path-12345",
+            args: ["--version"],
+            timeout: 0.5))
+    }
+
+    /// `stripANSICodes` should remove CSI sequences.
+    func testStripANSICodes() {
+        let input = "\u{1B}[31mred\u{1B}[0m"
+        XCTAssertEqual(ProviderVersionDetector.stripANSICodesForTest(input), "red")
+    }
+}
