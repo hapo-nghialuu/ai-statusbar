@@ -106,13 +106,15 @@ struct QuotaOverview: View {
 /// Tab chip over enabled providers. Layout (left-aligned rows):
 ///   [logo] MiniMax
 ///   [logo] 96% / 95%
-/// Logo-only chip per provider. Fixed 36×36 so the tab row lines up
-/// regardless of which provider is selected. Active chip gets the brand
-/// blue background; inactive chips sit on a light badge background.
+/// Logo-only chip per provider. Fixed 44×44 so the tab row lines up
+/// regardless of which provider is selected AND the hit area is large
+/// enough to click reliably on macOS (36×36 was registering as a
+/// near-miss on slower trackpads). Active chip gets the brand blue
+/// background; inactive chips sit on a light badge background.
 /// Status info (display name + quota %) used to render in the chip is
 /// now in the provider header card below, so the chips stay compact.
 struct ProviderTabs: View {
-    static let chipSize: CGFloat = 36
+    static let chipSize: CGFloat = 44
 
     let providers: [ProviderStatus]
     @Binding var selectedId: String
@@ -133,16 +135,17 @@ struct ProviderTabs: View {
             selectedId = p.id
         } label: {
             providerLogoView(for: p.id)
-                .frame(width: 22, height: 22)
+                .frame(width: 26, height: 26)
                 .frame(width: Self.chipSize, height: Self.chipSize)
                 .background(active ? VocabbyTheme.blue : VocabbyTheme.badge)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
                         .stroke(active ? Color.clear : VocabbyTheme.track, lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())  // whole chip is the click target
         .help(p.displayName)
         .accessibilityLabel(p.displayName)
     }
@@ -219,7 +222,15 @@ struct ProviderHeaderCard: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(VocabbyTheme.primary)
                 HStack(spacing: 4) {
-                    if isPlaceholder || quota.isRefreshing {
+                    if isPlaceholder {
+                        // Only the provider whose data hasn't arrived yet
+                        // shows the spinner — once its windows or error land
+                        // in `statuses`, switch to the real subtitle even if
+                        // other providers in the popover are still loading.
+                        // (Old code also gated on quota.isRefreshing, which
+                        // stays true until the slowest provider finishes —
+                        // so a fast provider like Codex showed "Đang tải…"
+                        // for as long as the slowest Claude cost scrape.)
                         ProgressView().controlSize(.mini).tint(VocabbyTheme.blue)
                         Text("Đang tải…")
                             .font(.system(size: 11).monospacedDigit())
