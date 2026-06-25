@@ -10,7 +10,7 @@
 #   1. Verify clean working tree (no uncommitted changes) — skip with --skip-build
 #   2. Update MARKETING_VERSION + CFBundleShortVersionString in source
 #   3. xcodebuild -quiet build the Release .app
-#   4. Copy build/Release/AIStatusbar.app → ~/Desktop/BirdNion.app
+#   4. Copy build/Release/BirdNion.app → ~/Desktop/BirdNion.app
 #   5. Zip → ~/Desktop/BirdNion-<version>.zip
 #   6. gh release create/upload v<version> on homebrew-tap
 #   7. Compute zip SHA, update Casks/birdnion.rb, push tap repo
@@ -68,11 +68,11 @@ fi
 echo "==> Bumping versions to ${VERSION}"
 if [[ "$DRY_RUN" -eq 0 ]]; then
   plutil -replace CFBundleShortVersionString -string "$VERSION" \
-    "$REPO_ROOT/AIStatusbar/Info.plist"
+    "$REPO_ROOT/BirdNion/Info.plist"
   python3 - "$REPO_ROOT" "$VERSION" <<'PY'
 import re, sys
 root, version = sys.argv[1], sys.argv[2]
-path = f"{root}/AIStatusbar.xcodeproj/project.pbxproj"
+path = f"{root}/BirdNion.xcodeproj/project.pbxproj"
 with open(path) as f:
     content = f.read()
 content = re.sub(r'MARKETING_VERSION = \d+\.\d+\.\d+;',
@@ -85,12 +85,12 @@ fi
 # 3. Build (Release, ad-hoc)
 if [[ "$SKIP_BUILD" -eq 0 ]]; then
   echo "==> xcodebuild"
-  run xcodebuild -quiet -project "$REPO_ROOT/AIStatusbar.xcodeproj" \
-      -scheme AIStatusbar -configuration Release \
+  run xcodebuild -quiet -project "$REPO_ROOT/BirdNion.xcodeproj" \
+      -scheme BirdNion -configuration Release \
       -destination 'platform=macOS' build
 fi
 
-BUILT_APP="$REPO_ROOT/build/Build/Products/Release/AIStatusbar.app"
+BUILT_APP="$REPO_ROOT/build/Build/Products/Release/BirdNion.app"
 if [[ ! -d "$BUILT_APP" ]]; then
   echo "Build output not found at $BUILT_APP. Run without --skip-build." >&2
   exit 1

@@ -8,50 +8,51 @@
 
 ## Mở project
 ```bash
-open AIStatusbar.xcodeproj
+open BirdNion.xcodeproj
 ```
-Trong Xcode chọn scheme `AIStatusbar` → Run (⌘R). App chạy dạng menu-bar only (LSUIElement).
+Trong Xcode chọn scheme `BirdNion` → Run (⌘R). App chạy dạng menu-bar only (LSUIElement).
 
 ## Build từ CLI
 
 ```bash
 # Debug build (nhanh)
-xcodebuild build -project AIStatusbar.xcodeproj -scheme AIStatusbar \
+xcodebuild build -project BirdNion.xcodeproj -scheme BirdNion \
   -configuration Debug -destination 'platform=macOS'
 
 # Release build (binary tối ưu, dùng để deploy ~/Desktop/BirdNion.app)
-xcodebuild build -project AIStatusbar.xcodeproj -scheme AIStatusbar \
+xcodebuild build -project BirdNion.xcodeproj -scheme BirdNion \
   -configuration Release -destination 'platform=macOS'
 ```
 
 **Lưu ý**: Sau khi đổi `project.pbxproj` (thêm file, thay đổi build settings) → cần `clean` để tránh linker error từ `.o` cũ.
 
 ```bash
-xcodebuild clean build -project AIStatusbar.xcodeproj -scheme AIStatusbar \
+xcodebuild clean build -project BirdNion.xcodeproj -scheme BirdNion \
   -configuration Release -destination 'platform=macOS'
 ```
 
 ## Chạy test
 ```bash
-xcodebuild test -project AIStatusbar.xcodeproj -scheme AIStatusbar \
+xcodebuild test -project BirdNion.xcodeproj -scheme BirdNion \
   -configuration Debug -destination 'platform=macOS'
 ```
 
 Filter theo class / function:
 ```bash
-xcodebuild test ... -only-testing:AIStatusbarTests/CodexBarConfigStoreTests
-xcodebuild test ... -only-testing:AIStatusbarTests/MenuBarVisibilityTests
+xcodebuild test ... -only-testing:BirdNionTests/BirdNionConfigStoreTests
+xcodebuild test ... -only-testing:BirdNionTests/HapoHubProviderTests
+xcodebuild test ... -only-testing:BirdNionTests/MiniMaxProviderParserTests
 ```
 
 ## Deploy local — `~/Desktop/BirdNion.app`
 
-Bundle name `BirdNion.app` đặt trong pbxproj (`PRODUCT_NAME = AIStatusbar` cho binary để giữ UserDefaults + Keychain service name ổn định qua các version).
+Bundle name `BirdNion.app` đặt trong pbxproj. Binary bên trong cũng tên `BirdNion` (PRODUCT_NAME khớp target name). Bundle ID `com.local.birdnion` — đổi từ bản cũ `com.local.aistatusbar`, nghĩa là UserDefaults cũ không di chuyển được (user phải cấu hình lại).
 
 ```bash
-SRC=~/Library/Developer/Xcode/DerivedData/AIStatusbar-bnhvrpmimlkomagvqedntylrgzmu/Build/Products/Release/AIStatusbar.app
+SRC=~/Library/Developer/Xcode/DerivedData/BirdNion-bnhvrpmimlkomagvqedntylrgzmu/Build/Products/Release/BirdNion.app
 DST=~/Desktop/BirdNion.app
 
-pkill -x AIStatusbar 2>/dev/null; sleep 0.5
+pkill -x BirdNion 2>/dev/null; sleep 0.5
 rm -rf "$DST"
 cp -R "$SRC" "$DST"
 open "$DST"
@@ -59,7 +60,7 @@ open "$DST"
 
 Tìm nhanh khi DerivedData path đổi:
 ```bash
-find ~/Library/Developer/Xcode/DerivedData -type d -name AIStatusbar.app -path "*Release*"
+find ~/Library/Developer/Xcode/DerivedData -type d -name BirdNion.app -path "*Release*"
 ```
 
 ## Release — push lên Homebrew tap
@@ -136,22 +137,54 @@ Hiện tại **ad-hoc signed** (`Sign to Run Locally`). Cách bypass Gatekeeper:
 
 ## Provider tokens & config
 
-| Token | Location | Override env |
+> As of the 2026-06-25 storage refactor, all provider tokens + enable flags
+> + metadata live in a single file: `~/.birdnion/settings.json` (XDG-compliant
+> path priority). There is **no longer any BirdNion-owned Keychain entry** —
+> the previous split between `~/Library/Application Support/BirdNion/providers.json`
+> and the macOS Keychain was consolidated into this one file.
+
+| Token / state | Location | Override env |
 |---|---|---|
-| MiniMax, Hapo, OpenRouter, DeepSeek, Z.ai | `~/.config/codexbar/config.json` (XDG) hoặc `~/.codexbar/config.json` (legacy) | `MINIMAX_CODING_API_KEY`, `MINIMAX_API_KEY` |
-| Claude OAuth | macOS Keychain `service: Claude Code-credentials` | (re-login via `claude` CLI) |
-| Codex OAuth | `~/.codex/auth.json` | (re-login via `codex` CLI) |
-| Per-provider enable/visibility | `~/Library/Application Support/AIStatusbar/providers.json` | (Settings sidebar) |
+| All provider tokens + enabled flags + metadata (MiniMax, Hapo, OpenRouter, DeepSeek, Z.ai, Claude admin key) | `~/.config/birdnion/settings.json` (XDG) or `~/.birdnion/settings.json` (legacy) | `BIRDNION_CONFIG` (full path), `MINIMAX_CODING_API_KEY`, `MINIMAX_API_KEY` |
+| Claude OAuth | macOS Keychain `service: Claude Code-credentials` (owned by Claude Code app, **not BirdNion**) | (re-login via `claude` CLI) |
+| Codex OAuth | `~/.codex/auth.json` (owned by `codex` CLI, **not BirdNion**) | (re-login via `codex` CLI) |
 | Per-provider menu-bar visibility | UserDefaults `menuBarVisibility.<id>` | (Settings popover switch) |
 | Per-provider refresh interval | UserDefaults `refreshInterval.<id>` | (Settings popover picker) |
 | General settings (region, refresh, ...) | UserDefaults (key prefix = bundle id) | (Settings general pane) |
+
+### `~/.birdnion/settings.json` format
+
+Array-of-providers shape, mirrors CodexBar's `config.json` schema so
+developers familiar with one app immediately know the other:
+
+```json
+{
+  "version": 1,
+  "providers": [
+    { "id": "minimax", "apiKey": "sk-…", "enabled": false, "region": "io",
+      "baseURL": null, "displayName": null, "accountLabel": null },
+    { "id": "hapo",    "apiKey": "…",    "enabled": false,
+      "baseURL": "https://<HAPO_BASE_URL>",
+      "displayName": "AI Hub" }
+  ]
+}
+```
+
+First-run default: every `enabled` field is `false` — the popover shows a
+one-line empty-state hint and the user opts in via Settings.
+
+Path priority (`BirdNionConfigStore.configURL()`):
+1. `BIRDNION_CONFIG` env override (full path)
+2. `XDG_CONFIG_HOME/birdnion/settings.json`
+3. `~/.config/birdnion/settings.json` (default)
+4. `~/.birdnion/settings.json` (legacy)
 
 ## Troubleshooting
 
 | Lỗi | Nguyên nhân | Cách xử lý |
 |---|---|---|
 | `linkd` error spam trong test log | System service macOS, vô hại | Bỏ qua — `grep -v "linkd"` |
-| `Unable to find module dependency: 'AIStatusbar'` | Test chạy trước khi app build | `xcodebuild build` trước, rồi `test` |
+| `Unable to find module dependency: 'BirdNion'` | Test chạy trước khi app build | `xcodebuild build` trước, rồi `test` |
 | Linker error `Undefined symbols ...` | Build incremental sau khi đổi `init` | `xcodebuild clean build` rồi test |
 | `release.sh` SHA mismatch on upload | GitHub release-asset cache | Đổi filename (`v0.x.y` → `0.x.y`) — script tự dùng `BirdNion-${VERSION}.zip` |
 | BirdNion mở ra dialog Gatekeeper | postflight chưa chạy / cask version cũ | `brew reinstall --cask hapo-nghialuu/tap/birdnion` |
@@ -160,7 +193,7 @@ Hiện tại **ad-hoc signed** (`Sign to Run Locally`). Cách bypass Gatekeeper:
 
 ## File liên quan
 
-- `AIStatusbar.xcodeproj/project.pbxproj` — Xcode project, build settings
+- `BirdNion.xcodeproj/project.pbxproj` — Xcode project, build settings
 - `Scripts/release.sh` — release automation
 - `docs/build.md` — file này
 - `docs/system-architecture.md` — kiến trúc providers
