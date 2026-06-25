@@ -176,6 +176,18 @@ final class QuotaService: ObservableObject {
         // menu-bar popover stops showing 'Đang tải…' as soon as the first
         // provider returns instead of waiting for the slowest one (which
         // can be Codex at 30s timeout on first cold call).
+        //
+        // Seed `pending` with the LAST KNOWN statuses so providers keep
+        // showing their previous data while the new fetch is in flight.
+        // Without this seed the popover would flash empty placeholders for
+        // every provider the moment refresh() starts — confusing and
+        // visually jarring. Now: old data stays, header shows a subtle
+        // 'Đang cập nhật…' indicator, and each row swaps to fresh data
+        // the moment its fetch returns.
+        var pending: [String: ProviderStatus] = Dictionary(
+            uniqueKeysWithValues: statuses.map { ($0.id, $0) }
+        )
+        let isFirstRefresh = statuses.isEmpty
         await withTaskGroup(of: (String, ProviderStatus, TimeInterval).self) { group in
             for p in due {
                 group.addTask {
@@ -192,17 +204,22 @@ final class QuotaService: ObservableObject {
                     }
                 }
             }
-            var pending: [String: ProviderStatus] = [:]
             var timings: [(String, TimeInterval)] = []
+            var firstCompletionAt: Date?
             for await (id, status, elapsed) in group {
                 pending[id] = status
                 providerLastFetched[id] = Date()
                 timings.append((id, elapsed))
+                if firstCompletionAt == nil { firstCompletionAt = Date() }
                 // Re-publish on each completion so the popover updates
                 // incrementally (tab appears, then fills in).
                 statuses = providers.compactMap { pending[$0.id] }
                 rebuildDisplayStatuses()
                 if QuotaWarnConfig.enabled { evaluateWarnings(statuses) }
+            }
+            if isFirstRefresh, let firstAt = firstCompletionAt {
+                log.info("first fetch done in \(String(format: "%.2f", Date().timeIntervalSince(startedAt)), privacy: .public)s — popover has data")
+                _ = firstAt  // reserved for future "first-paint" metric
             }
             // Log slow providers (>2s) so the cause of slow loads is
             // visible in Console.app without attaching a debugger.

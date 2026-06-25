@@ -25,59 +25,73 @@ final class ServicesContainer: ObservableObject {
         self.configService = ConfigService()
         let store = SettingsStore()
         self.settings = store
+        self.quotaService = QuotaService(providers: Self.makeProviders(keychain: ks),
+                                         interval: store.refreshIntervalSeconds)
+        // Bind so settings.pushRefreshInterval() can push changes into the loop.
+        store.bind(quotaService: quotaService)
+    }
 
-        // Build providers from providers.json so each entry uses its real
-        // baseURL / authHeaderTemplate. Falls back to the default document
-        // (which already points at <HAPO_HOST>) on first launch when
-        // no providers.json exists on disk.
+    /// Build the ordered list of `QuotaProvider` instances from the latest
+    /// providers.json on disk. Order matches the file (the order the user
+    /// arranged in the Settings sidebar); disabled entries are skipped.
+    /// Falls back to the hard-coded default triplet when the file is empty.
+    /// Shared between `init()` and `rebuildProviders()` so reorder / toggle
+    /// flows use the same factory.
+    static func makeProviders(keychain: KeychainService) -> [QuotaProvider] {
         let doc = ProvidersStore.load()
         var providers: [QuotaProvider] = []
         for cfg in doc.providers where cfg.enabled {
-            if cfg.id == "minimax" {
-                providers.append(MiniMaxProvider(keychain: ks))
-            } else if cfg.id == "codex" {
+            switch cfg.id {
+            case "minimax":
+                providers.append(MiniMaxProvider(keychain: keychain))
+            case "codex":
                 // Zero-config: reads ~/.codex/auth.json, no keychain token needed.
                 providers.append(CodexProvider())
-            } else if cfg.id == "hapo" {
+            case "hapo":
                 let hapoConfig = HapoHubConfig(
                     id: cfg.id,
                     displayName: cfg.displayName ?? "AIHub",
                     baseURL: cfg.baseURL ?? HapoHubConfig.real.baseURL,
                     authHeaderTemplate: HapoHubConfig.real.authHeaderTemplate,
-                    jsonPath: HapoHubConfig.real.jsonPath
-                )
+                    jsonPath: HapoHubConfig.real.jsonPath)
                 providers.append(HapoHubFactory.make(
                     session: .shared,
                     config: hapoConfig,
-                    keychain: ks
-                ))
-            } else if cfg.id == "openrouter" {
-                providers.append(OpenRouterProvider(keychain: ks))
-            } else if cfg.id == "deepseek" {
-                providers.append(DeepSeekProvider(keychain: ks))
-            } else if cfg.id == "zai" {
-                providers.append(ZaiProvider(keychain: ks))
-            } else if cfg.id == "claude" {
+                    keychain: keychain))
+            case "openrouter":
+                providers.append(OpenRouterProvider(keychain: keychain))
+            case "deepseek":
+                providers.append(DeepSeekProvider(keychain: keychain))
+            case "zai":
+                providers.append(ZaiProvider(keychain: keychain))
+            case "claude":
                 // Zero-config: reads the Claude Code OAuth token from the Keychain.
                 providers.append(ClaudeProvider())
+            default:
+                break
             }
         }
         // If providers.json is missing/empty (first launch before any UI save),
         // fall back to the hard-coded defaults so the popover is never blank.
         if providers.isEmpty {
             providers = [
-                MiniMaxProvider(keychain: ks),
+                MiniMaxProvider(keychain: keychain),
                 CodexProvider(),
                 HapoHubFactory.make(
                     session: .shared,
                     config: HapoHubConfig.real,
-                    keychain: ks
-                )
+                    keychain: keychain)
             ]
         }
-        self.quotaService = QuotaService(providers: providers, interval: store.refreshIntervalSeconds)
-        // Bind so settings.pushRefreshInterval() can push changes into the loop.
-        store.bind(quotaService: quotaService)
+        return providers
+    }
+
+    /// Rebuild the QuotaService provider list from the current providers.json
+    /// on disk. Called by AppDelegate after the user reorders / toggles in
+    /// the Settings sidebar so the popover tabs + menu-bar rotation pick up
+    /// the new order immediately (no app restart needed).
+    func rebuildProviders() {
+        quotaService.setProviders(Self.makeProviders(keychain: keychain))
     }
 
     func start() {
