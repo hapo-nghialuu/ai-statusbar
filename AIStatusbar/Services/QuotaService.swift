@@ -8,6 +8,7 @@ import os
 @MainActor
 final class QuotaService: ObservableObject {
     @Published private(set) var statuses: [ProviderStatus] = []
+    @Published private(set) var displayStatuses: [ProviderStatus] = []
     @Published private(set) var isRefreshing: Bool = false
 
     /// Always-fully-populated status array used by the popover UI. Contains
@@ -15,9 +16,9 @@ final class QuotaService: ObservableObject {
     /// in-flight — missing entries get a placeholder so the tabs + cards
     /// render immediately and the user sees a per-card spinner instead of
     /// the whole popover blocked on a single slow provider.
-    var displayStatuses: [ProviderStatus] {
+    private func rebuildDisplayStatuses() {
         let have = Dictionary(uniqueKeysWithValues: statuses.map { ($0.id, $0) })
-        return providers.compactMap { p in
+        displayStatuses = providers.compactMap { p in
             if let s = have[p.id] { return s }
             return ProviderStatus(
                 id: p.id, displayName: p.displayName,
@@ -46,11 +47,13 @@ final class QuotaService: ObservableObject {
 
     func add(_ p: QuotaProvider) {
         providers.append(p)
+        rebuildDisplayStatuses()
     }
 
     func remove(id: String) {
         providers.removeAll { $0.id == id }
         statuses.removeAll { $0.id == id }
+        rebuildDisplayStatuses()
     }
 
     /// Move a provider to a new position in the polling + tab order. The
@@ -69,6 +72,7 @@ final class QuotaService: ObservableObject {
         // next refresh will overwrite them anyway.
         var byId = Dictionary(uniqueKeysWithValues: statuses.map { ($0.id, $0) })
         statuses = providers.compactMap { byId.removeValue(forKey: $0.id) }
+        rebuildDisplayStatuses()
     }
 
     func setEnabled(_ enabled: Bool, for id: String) {
@@ -142,6 +146,7 @@ final class QuotaService: ObservableObject {
                 // Re-publish on each completion so the popover updates
                 // incrementally (tab appears, then fills in).
                 statuses = providers.compactMap { pending[$0.id] }
+                rebuildDisplayStatuses()
                 if QuotaWarnConfig.enabled { evaluateWarnings(statuses) }
             }
             // Log slow providers (>2s) so the cause of slow loads is

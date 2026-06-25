@@ -94,10 +94,10 @@ struct QuotaOverview: View {
 
     private func effectiveSelectedId() -> String {
         if let sel = selectedProviderId,
-           quota.statuses.contains(where: { $0.id == sel }) {
+           quota.displayStatuses.contains(where: { $0.id == sel }) {
             return sel
         }
-        return quota.statuses.first?.id ?? ""
+        return quota.displayStatuses.first?.id ?? ""
     }
 }
 

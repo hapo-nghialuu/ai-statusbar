@@ -131,7 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Re-render the menu bar title whenever QuotaService publishes.
-        services.quotaService.$statuses
+        services.quotaService.$displayStatuses
             .receive(on: RunLoop.main)
             .sink { [weak self] statuses in self?.updateFrames(from: statuses) }
             .store(in: &cancellables)
