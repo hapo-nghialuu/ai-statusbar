@@ -1,4 +1,5 @@
 import SwiftUI
+import CodexBarCore
 
 /// Providers tab — CodexBar-style two-pane layout: a sidebar listing every
 /// provider (logo + name + status + enable toggle) on the left, and a detail
@@ -261,6 +262,10 @@ struct ProvidersPane: View {
                     SettingsRowDivider()
                     costRows(cost)
                 }
+                if row.id == "claude", let cost = s.cost {
+                    SettingsRowDivider()
+                    webCostRow(cost)
+                }
             } else {
                 Text(row.enabled ? "Chưa có dữ liệu — bấm làm mới." : "Đang tắt — không có dữ liệu.")
                     .font(.system(size: 12))
@@ -358,6 +363,31 @@ struct ProvidersPane: View {
         VStack(alignment: .leading, spacing: 6) {
             costLine("Hôm nay", usd: cost.todayUSD, tokens: cost.todayTokens)
             costLine("30 ngày", usd: cost.last30USD, tokens: cost.last30Tokens)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    /// Claude cost row, sourced from CodexBarCore's ClaudeWebAPIFetcher
+    /// (scrape claude.ai/settings/billing). The snapshot only carries
+    /// used/limit for the current monthly cycle, so we surface a single
+    /// "Đã dùng: $X / $Y" line — matches CodexBar's compact Claude view.
+    private func webCostRow(_ cost: ProviderCostSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("CHI PHÍ")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .tracking(0.5)
+                Spacer()
+                Text("\(UsageFormatter.usdString(cost.used)) / \(UsageFormatter.usdString(cost.limit))")
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+            }
+            if let period = cost.period {
+                Text(period)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

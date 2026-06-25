@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import CodexBarCore
 
 /// Claude (Anthropic) subscription usage provider.
 ///
@@ -28,13 +29,20 @@ final class ClaudeProvider: QuotaProvider {
     /// Status-page reader. Isolated from the main fetcher so unit tests can
     /// inject a fake without hitting status.anthropic.com.
     private let statusProvider: () async -> OpenAIServiceStatus?
+    /// Cost-scrape reader. Calls CodexBarCore's ClaudeWebAPIFetcher which
+    /// auto-detects browser cookies (Safari/Chrome via SweetCookieKit) and
+    /// scrapes claude.ai/settings/billing. nil when no session cookie is
+    /// found or the scrape fails — mirrors CodexBar's auto path.
+    private let costProvider: () async -> ProviderCostSnapshot?
 
     init(session: URLSession = .shared,
          tokenProvider: @escaping () -> String? = { ClaudeProvider.readKeychainToken() },
-         statusProvider: @escaping () async -> OpenAIServiceStatus? = ClaudeProvider.fetchServiceStatus) {
+         statusProvider: @escaping () async -> OpenAIServiceStatus? = ClaudeProvider.fetchServiceStatus,
+         costProvider: @escaping () async -> ProviderCostSnapshot? = ClaudeProvider.fetchCost) {
         self.session = session
         self.tokenProvider = tokenProvider
         self.statusProvider = statusProvider
+        self.costProvider = costProvider
     }
 
     private func override() -> String? {
@@ -66,8 +74,12 @@ final class ClaudeProvider: QuotaProvider {
         switch http.statusCode {
         case 200..<300:
             let base = parse(data, accountLabel: override())
-            // Service status is best-effort, like Codex's statusProbe.
-            let status = await statusProvider()
+            // Service status + cost are best-effort, like Codex's statusProbe.
+            // Run concurrently so neither blocks the OAuth quota path.
+            async let statusAsync = statusProvider()
+            async let costAsync = costProvider()
+            let status = await statusAsync
+            let cost = await costAsync
             return ProviderStatus(
                 id: base.id,
                 displayName: base.displayName,
@@ -82,7 +94,8 @@ final class ClaudeProvider: QuotaProvider {
                 serviceStatusLevel: status?.indicator,
                 accountID: base.accountID,
                 planName: base.planName,
-                resetCreditsAvailable: base.resetCreditsAvailable)
+                resetCreditsAvailable: base.resetCreditsAvailable,
+                cost: cost)
         case 401, 403:
             return failure("Token Claude hết hạn — đăng nhập lại bằng Claude Code")
         default:
@@ -209,10 +222,33 @@ final class ClaudeProvider: QuotaProvider {
         if let cached = cachedClaudeVersion {
             return cached.isEmpty ? nil : cached
         }
-        let raw = ProviderVersionDetector.claudeVersion()
+        let raw = ClaudeCLIVersionDetector.claudeVersion()
         cachedClaudeVersion = raw ?? ""
         return raw
     }
+
+    // MARK: - Cost scrape (ClaudeWebAPIFetcher)
+
+    /// Best-effort cost scrape via CodexBarCore's ClaudeWebAPIFetcher.
+    /// Auto-detects browser cookies (Safari/Chrome via SweetCookieKit)
+    /// and pulls today's spend + monthly limit from claude.ai. nil when:
+    /// - no claude.ai session cookie is present in any browser,
+    /// - the user denied Keychain access (CodexBar's BrowserCookieAccessGate
+    ///   suppresses further attempts for 6h),
+    /// - the network call or JSON parse failed.
+    /// We never throw — the cost row is optional UI and must not block the
+    /// OAuth quota path.
+    static func fetchCost() async -> ProviderCostSnapshot? {
+        do {
+            let detection = BrowserDetection()
+            let data = try await ClaudeWebAPIFetcher.fetchUsage(browserDetection: detection)
+            return data.extraUsageCost
+        } catch {
+            return nil
+        }
+    }
+
+    // MARK: - Service status (status.anthropic.com)
 
     /// Best-effort fetch of Anthropic's public status. Mirrors Codex's
     /// `OpenAIServiceStatus` pattern: short timeout, never throws, returns nil

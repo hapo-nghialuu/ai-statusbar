@@ -1,5 +1,6 @@
 import XCTest
 @testable import AIStatusbar
+import CodexBarCore
 
 final class MiniMaxProviderParserTests: XCTestCase {
     private let happyJSON = """
@@ -387,13 +388,13 @@ final class ClaudeProviderTests: XCTestCase {
     }
 }
 
-// MARK: - ProviderVersionDetector
+// MARK: - ClaudeCLIVersionDetector
 
-final class ProviderVersionDetectorTests: XCTestCase {
+final class ClaudeCLIVersionDetectorTests: XCTestCase {
     /// Smoke test against the real `claude` binary. Skipped if the user
     /// doesn't have it installed (CI without claude CLI).
     func testClaudeVersionReadsBinary() throws {
-        guard let v = ProviderVersionDetector.claudeVersion() else {
+        guard let v = ClaudeCLIVersionDetector.claudeVersion() else {
             throw XCTSkip("claude CLI not installed on this host")
         }
         XCTAssertFalse(v.isEmpty)
@@ -401,7 +402,7 @@ final class ProviderVersionDetectorTests: XCTestCase {
     }
 
     func testLocateCodexBinary() throws {
-        guard let v = ProviderVersionDetector.codexVersion() else {
+        guard let v = ClaudeCLIVersionDetector.codexVersion() else {
             throw XCTSkip("codex CLI not installed on this host")
         }
         XCTAssertFalse(v.isEmpty)
@@ -409,7 +410,7 @@ final class ProviderVersionDetectorTests: XCTestCase {
 
     /// `runVersion` against a missing binary should return nil (not crash).
     func testRunVersionMissingBinaryReturnsNil() {
-        XCTAssertNil(ProviderVersionDetector.runVersionForTest(
+        XCTAssertNil(ClaudeCLIVersionDetector.runVersionForTest(
             path: "/nonexistent/path-12345",
             args: ["--version"],
             timeout: 0.5))
@@ -418,6 +419,47 @@ final class ProviderVersionDetectorTests: XCTestCase {
     /// `stripANSICodes` should remove CSI sequences.
     func testStripANSICodes() {
         let input = "\u{1B}[31mred\u{1B}[0m"
-        XCTAssertEqual(ProviderVersionDetector.stripANSICodesForTest(input), "red")
+        XCTAssertEqual(ClaudeCLIVersionDetector.stripANSICodesForTest(input), "red")
+    }
+}
+
+// MARK: - ClaudeWebAPIFetcher (cost scrape)
+
+final class ClaudeWebAPIFetcherTests: XCTestCase {
+    /// CodexBar exposes a `_parseUsageResponseForTesting` helper so we can
+    /// validate parser behavior without driving a real browser. We exercise
+    /// the same helper to confirm the BirdNion integration gets a usable
+    /// `ProviderCostSnapshot` out of a typical response.
+    func testParseUsageResponseWithExtraUsageCost() throws {
+        let now = ISO8601DateFormatter().string(from: Date())
+        let json = #"""
+        {
+          "organization": {"uuid": "00000000-0000-0000-0000-000000000001", "name": "Personal"},
+          "five_hour": {"utilization": 30.0, "resets_at": "\#(now)"},
+          "seven_day": {"utilization": 55.0, "resets_at": "\#(now)"},
+          "extra_usage": {
+            "is_enabled": true,
+            "monthly_limit": 5000.0,
+            "used_credits": 1234.0,
+            "currency": "USD"
+          }
+        }
+        """#.data(using: .utf8)!
+        let data = try ClaudeWebAPIFetcher._parseUsageResponseForTesting(json)
+        XCTAssertNotNil(data.extraUsageCost)
+        let cost = try XCTUnwrap(data.extraUsageCost)
+        XCTAssertEqual(cost.used, 12.34, accuracy: 0.001)
+        XCTAssertEqual(cost.limit, 50.0, accuracy: 0.001)
+        XCTAssertEqual(cost.currencyCode, "USD")
+    }
+
+    func testParseUsageResponseWithoutExtraUsage() throws {
+        let json = #"""
+        {"organization": {"uuid": "x", "name": "x"},
+        "five_hour": {"utilization": 10.0, "resets_at": "2026-07-01T00:00:00Z"},
+        "seven_day": {"utilization": 20.0, "resets_at": "2026-07-05T00:00:00Z"}}
+        """#.data(using: .utf8)!
+        let data = try ClaudeWebAPIFetcher._parseUsageResponseForTesting(json)
+        XCTAssertNil(data.extraUsageCost)
     }
 }

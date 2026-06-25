@@ -1,12 +1,12 @@
 import Foundation
 
 /// Best-effort CLI version detection for providers that ship a binary on PATH.
-/// Mirrors CodexBar's `ProviderVersionDetector`: each provider gets a tiny
+/// Mirrors CodexBar's `ClaudeCLIVersionDetector`: each provider gets a tiny
 /// helper that runs `<binary> --version` (or fallback flags) and returns the
 /// trimmed first line, or nil if anything goes wrong. Used by the Claude
 /// provider to surface the installed `claude` CLI version even when OAuth
 /// fetch fails (Codex parity).
-enum ProviderVersionDetector {
+enum ClaudeCLIVersionDetector {
     /// Runs `claude --version` via Process with a 5s timeout, strips ANSI,
     /// returns the trimmed first non-empty line. nil if the binary is
     /// absent or fails.

@@ -1,4 +1,5 @@
 import Foundation
+import CodexBarCore
 
 /// One quota window (e.g. "5 giờ" or "Tuần") reported by a provider.
 /// Matches the `<!-- contract:QuotaWindow -->` block in `specs/ai-statusbar/design.md`.
@@ -123,6 +124,11 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
     /// Number of unused manual-reset credits (Codex). nil when the provider
     /// doesn't support it or the API didn't return data.
     let resetCreditsAvailable: Int?
+    /// Token cost + spend summary scraped from the provider's web dashboard
+    /// (e.g. Claude's claude.ai/settings/billing). nil when the provider
+    /// doesn't expose this or the scrape failed. Surfaced in the Usage
+    /// section as "Today: $X · NM tokens" + "Last 30 days: ..." lines.
+    let cost: ProviderCostSnapshot?
 
     init(id: String,
          displayName: String,
@@ -137,7 +143,8 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
          serviceStatusLevel: String? = nil,
          accountID: String? = nil,
          planName: String? = nil,
-         resetCreditsAvailable: Int? = nil) {
+         resetCreditsAvailable: Int? = nil,
+         cost: ProviderCostSnapshot? = nil) {
         self.id = id
         self.displayName = displayName
         self.windows = windows
@@ -152,5 +159,6 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
         self.accountID = accountID
         self.planName = planName
         self.resetCreditsAvailable = resetCreditsAvailable
+        self.cost = cost
     }
 }

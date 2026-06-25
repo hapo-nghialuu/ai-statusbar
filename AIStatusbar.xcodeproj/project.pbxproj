@@ -27,7 +27,8 @@
 		DDDD00E2000000000000B0E0 /* DeepSeekProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F2000000000000F0E0 /* DeepSeekProvider.swift */; };
 		DDDD00E3000000000000B0E0 /* ZaiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F3000000000000F0E0 /* ZaiProvider.swift */; };
 		DDDD00E4000000000000B0E0 /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F4000000000000F0E0 /* ClaudeProvider.swift */; };
-		PVD0001000000000000B001 /* ProviderVersionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = PVD0002000000000000F002 /* ProviderVersionDetector.swift */; };
+		PVD0001000000000000B001 /* ClaudeCLIVersionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = PVD0002000000000000F002 /* ClaudeCLIVersionDetector.swift */; };
+		LSP0003000000000000BF001 /* CodexBarCore in Frameworks */ = {isa = PBXBuildFile; productRef = LSP0002000000000000PD001 /* CodexBarCore */; };
 		DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000C000000000000F006 /* HapoHubConfig.swift */; };
 		DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000E000000000000F007 /* HapoHubProvider.swift */; };
 		DDDD000F0000000000B008 /* MockHapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0010000000000000F008 /* MockHapoHubProvider.swift */; };
@@ -98,7 +99,7 @@
 		DDDD00F2000000000000F0E0 /* DeepSeekProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/DeepSeekProvider.swift; sourceTree = "<group>"; };
 		DDDD00F3000000000000F0E0 /* ZaiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/ZaiProvider.swift; sourceTree = "<group>"; };
 		DDDD00F4000000000000F0E0 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/ClaudeProvider.swift; sourceTree = "<group>"; };
-		PVD0002000000000000F002 /* ProviderVersionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/ProviderVersionDetector.swift; sourceTree = "<group>"; };
+		PVD0002000000000000F002 /* ClaudeCLIVersionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/ClaudeCLIVersionDetector.swift; sourceTree = "<group>"; };
 		DDDD000C000000000000F006 /* HapoHubConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/HapoHubConfig.swift; sourceTree = "<group>"; };
 		DDDD000E000000000000F007 /* HapoHubProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/HapoHubProvider.swift; sourceTree = "<group>"; };
 		DDDD0010000000000000F008 /* MockHapoHubProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIStatusbar/Providers/MockHapoHubProvider.swift; sourceTree = "<group>"; };
@@ -141,6 +142,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			LSP0003000000000000BF001 /* CodexBarCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,6 +277,9 @@
 			dependencies = (
 			);
 			name = AIStatusbar;
+			packageProductDependencies = (
+				LSP0002000000000000PD001 /* CodexBarCore */,
+			);
 			productName = AIStatusbar;
 			productReference = AAAA0003000000000000F002 /* AIStatusbar.app */;
 			productType = "com.apple.product-type.application";
@@ -295,6 +300,9 @@
 				CCCC0015000000000000DT01 /* PBXTargetDependency */,
 			);
 			name = AIStatusbarTests;
+			packageProductDependencies = (
+				LSP0002000000000000PD001 /* CodexBarCore */,
+			);
 			productName = AIStatusbarTests;
 			productReference = CCCC0010000000000000F008 /* AIStatusbarTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -324,6 +332,9 @@
 			);
 			mainGroup = AAAA0006000000000000G001;
 			productRefGroup = AAAA0008000000000000G003 /* Products */;
+			packageReferences = (
+				LSP0001000000000000PR001 /* XCLocalSwiftPackageReference "../CodexBar" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -332,6 +343,22 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		LSP0001000000000000PR001 /* XCLocalSwiftPackageReference "../CodexBar" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../CodexBar;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		LSP0002000000000000PD001 /* CodexBarCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CodexBarCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+
 
 /* Begin PBXSourcesBuildPhase section */
 		AAAA000F000000000000B003 /* Sources */ = {
@@ -350,7 +377,7 @@
 				DDDD00E2000000000000B0E0 /* DeepSeekProvider.swift in Sources */,
 				DDDD00E3000000000000B0E0 /* ZaiProvider.swift in Sources */,
 				DDDD00E4000000000000B0E0 /* ClaudeProvider.swift in Sources */,
-				PVD0001000000000000B001 /* ProviderVersionDetector.swift in Sources */,
+				PVD0001000000000000B001 /* ClaudeCLIVersionDetector.swift in Sources */,
 				DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */,
 				DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */,
 				DDDD000F0000000000B008 /* MockHapoHubProvider.swift in Sources */,
