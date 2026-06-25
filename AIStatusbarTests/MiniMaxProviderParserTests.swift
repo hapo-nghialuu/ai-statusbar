@@ -601,6 +601,41 @@ enum ProvidersPaneLike {
     }
 }
 
+// MARK: - ClaudeCostScanner pricing
+
+final class ClaudeCostScannerTests: XCTestCase {
+    /// Guards the per-model pricing table so an accidental rewrite doesn't
+    /// silently change what users see as "≈$X / $Y" on the panel.
+    func testOpusPricing() {
+        let price = ClaudeModelPrice.price(for: "claude-opus-4-8")
+        XCTAssertEqual(price.inputPerM, 15.0, accuracy: 0.001)
+        XCTAssertEqual(price.cacheWritePerM, 18.75, accuracy: 0.001)
+        XCTAssertEqual(price.cacheReadPerM, 1.50, accuracy: 0.001)
+        XCTAssertEqual(price.outputPerM, 75.0, accuracy: 0.001)
+    }
+
+    func testSonnetPricingDefault() {
+        let price = ClaudeModelPrice.price(for: "claude-sonnet-4")
+        XCTAssertEqual(price.inputPerM, 3.0, accuracy: 0.001)
+        XCTAssertEqual(price.outputPerM, 15.0, accuracy: 0.001)
+        // Unknown model falls back to Sonnet pricing.
+        let unknown = ClaudeModelPrice.price(for: "claude-unknown-future")
+        XCTAssertEqual(unknown.inputPerM, price.inputPerM)
+    }
+
+    func testHaikuPricing() {
+        let price = ClaudeModelPrice.price(for: "claude-haiku-4")
+        XCTAssertEqual(price.inputPerM, 0.80, accuracy: 0.001)
+        XCTAssertEqual(price.outputPerM, 4.0, accuracy: 0.001)
+    }
+
+    func testSummaryEmpty() {
+        let summary = ClaudeCostSummary(todayUSD: 0, todayTokens: 0,
+                                        last30USD: 0, last30Tokens: 0)
+        XCTAssertTrue(summary.isEmpty)
+    }
+}
+
 // MARK: - SettingsStore Claude parity fields
 
 @MainActor
