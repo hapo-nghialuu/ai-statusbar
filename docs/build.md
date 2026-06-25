@@ -173,11 +173,41 @@ developers familiar with one app immediately know the other:
 First-run default: every `enabled` field is `false` — the popover shows a
 one-line empty-state hint and the user opts in via Settings.
 
-Path priority (`BirdNionConfigStore.configURL()`):
+### Provider endpoints (URLs)
+
+| Provider | API endpoint | Region / Notes |
+|---|---|---|
+| `minimax` | `https://platform.minimax.io/v1/api/openplatform/coding_plan/remains` | `MINIMAX_CODING_API_KEY` / `MINIMAX_API_KEY` env; region `io` / `com` (mainland CN) via `minimaxRegion` UserDefault |
+| `codex` | (uses ChatGPT backend API via `~/.codex/auth.json` — OAuth by `codex` CLI) | zero-config, no token in BirdNion config |
+| `hapo` | `https://<HAPO_BASE_URL>` (+ `https://<HAPO_ME_URL>` for identity) | `HAPO_API_KEY` env (not yet wired — set via Settings), `baseURL` field overridable per provider entry |
+| `claude` | `https://api.anthropic.com/api/oauth/usage` (+ `claude.ai/api/*` for cost scrape) | OAuth from `Claude Code-credentials` Keychain (owned by Claude Code app); admin API key path uses BirdNion config |
+| `openrouter` | `https://openrouter.ai/api/v1/credits` | bearer token |
+| `deepseek` | `https://api.deepseek.com/user/balance` | bearer token |
+| `zai` | `https://api.z.ai/api/monitor/usage/quota/limit` (region `global`); `https://open.bigmodel.cn/api/monitor/usage/quota/limit` (region `cn`) | bearer token; region via `zaiRegion` UserDefault |
+
+### File path
+
+Default file location (resolved by `BirdNionConfigStore.configURL()` in this order):
 1. `BIRDNION_CONFIG` env override (full path)
 2. `XDG_CONFIG_HOME/birdnion/settings.json`
 3. `~/.config/birdnion/settings.json` (default)
 4. `~/.birdnion/settings.json` (legacy)
+
+Quick commands:
+```bash
+# View current config
+cat ~/.config/birdnion/settings.json
+
+# Open in Finder (Settings → Debug → "Mở Finder" button)
+open ~/.config/birdnion/settings.json
+
+# Override path via env (for testing)
+BIRDNION_CONFIG=/tmp/birdnion-test/settings.json open /Applications/BirdNion.app
+
+# Check the Hapo endpoint manually (for debugging "Lỗi" status)
+TOKEN=$(jq -r '.providers[] | select(.id=="hapo") | .apiKey' ~/.config/birdnion/settings.json)
+curl -H "Authorization: Bearer $TOKEN" \
+  https://<HAPO_BASE_URL>
 
 ## Troubleshooting
 
