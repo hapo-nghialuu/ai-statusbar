@@ -158,7 +158,13 @@ struct ProviderTabs: View {
         case "minimax":
             Image("MiniMaxLogo").resizable().interpolation(.high)
         case "codex":
+            // Codex's SVG declares itself a template image so it can be
+            // recoloured by .foregroundStyle(). The chip's parent stack
+            // sometimes wins over the inherited tint, leaving the logo
+            // rendered against the chip background as an empty disc.
+            // Pass a fixed dark tint explicitly so the mark always shows.
             Image("CodexLogo").resizable().interpolation(.high)
+                .colorMultiply(VocabbyTheme.primary)
         case "hapo":
             Image("HapoLogo").resizable().interpolation(.high)
         case "openrouter":

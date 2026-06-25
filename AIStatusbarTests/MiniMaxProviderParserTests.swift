@@ -676,6 +676,69 @@ final class ClaudeUsageReportTests: XCTestCase {
     }
 }
 
+// MARK: - MenuBarVisibility
+
+final class MenuBarVisibilityTests: XCTestCase {
+    /// Each test uses a unique provider id under "menuBarVisibility.<id>"
+    /// and cleans it up in tearDown. Going through UserDefaults.standard
+    /// directly because MenuBarVisibility is hard-wired to it (the test
+    /// target doesn't @testable-import a configurable defaults store
+    /// without a pbxproj dependency fix).
+    private var testProviderIds: [String] = []
+
+    override func tearDown() {
+        for id in testProviderIds {
+            UserDefaults.standard.removeObject(forKey: "menuBarVisibility.\(id)")
+        }
+        testProviderIds.removeAll()
+        super.tearDown()
+    }
+
+    func testDefaultIsShown() {
+        // A provider with no recorded preference should be shown by default
+        // (matches the prior behavior of rotating every enabled provider).
+        let id = "never-touched-\(UUID().uuidString)"
+        testProviderIds.append(id)
+        XCTAssertTrue(MenuBarVisibility.isShown(providerId: id))
+    }
+
+    func testSetShownPersists() {
+        let id = "persists-\(UUID().uuidString)"
+        testProviderIds.append(id)
+        MenuBarVisibility.setShown(providerId: id, to: false)
+        XCTAssertFalse(MenuBarVisibility.isShown(providerId: id))
+        MenuBarVisibility.setShown(providerId: id, to: true)
+        XCTAssertTrue(MenuBarVisibility.isShown(providerId: id))
+    }
+
+    func testToggleFlips() {
+        let id = "toggle-\(UUID().uuidString)"
+        testProviderIds.append(id)
+        XCTAssertTrue(MenuBarVisibility.isShown(providerId: id))
+        MenuBarVisibility.toggle(providerId: id)
+        XCTAssertFalse(MenuBarVisibility.isShown(providerId: id))
+        MenuBarVisibility.toggle(providerId: id)
+        XCTAssertTrue(MenuBarVisibility.isShown(providerId: id))
+    }
+
+    func testSetShownPostsNotification() {
+        let id = "notify-\(UUID().uuidString)"
+        testProviderIds.append(id)
+        let expectation = expectation(description: "menuBarVisibilityChanged")
+        var receivedId: String?
+        let observer = NotificationCenter.default.addObserver(
+            forName: .menuBarVisibilityChanged, object: nil, queue: .main
+        ) { note in
+            receivedId = note.object as? String
+            expectation.fulfill()
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+        MenuBarVisibility.setShown(providerId: id, to: false)
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedId, id)
+    }
+}
+
 // MARK: - SettingsStore Claude parity fields
 
 @MainActor
