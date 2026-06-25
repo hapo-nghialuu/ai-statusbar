@@ -50,6 +50,22 @@ final class QuotaService: ObservableObject {
         rebuildDisplayStatuses()
     }
 
+    /// Replace the entire provider list with `newProviders`. Used after the
+    /// user reorders or toggles providers in the Settings sidebar so the
+    /// popover tabs + menu-bar rotation pick up the new arrangement without
+    /// an app restart. Cached `statuses` are dropped (the next refresh
+    /// repopulates them), and a refresh is fired on the next loop tick.
+    func setProviders(_ newProviders: [QuotaProvider]) {
+        providers = newProviders
+        statuses = []
+        // Drop cached last-fetched timestamps for providers no longer in the
+        // list, otherwise the per-provider throttle could skip a fresh
+        // provider's first poll under the right timing.
+        let keep = Set(newProviders.map(\.id))
+        providerLastFetched = providerLastFetched.filter { keep.contains($0.key) }
+        rebuildDisplayStatuses()
+    }
+
     func remove(id: String) {
         providers.removeAll { $0.id == id }
         statuses.removeAll { $0.id == id }
@@ -110,20 +126,58 @@ final class QuotaService: ObservableObject {
         loopTask = nil
     }
 
+    /// Per-provider refresh override (in seconds). 0 or absent means "use the
+    /// global interval set via `setInterval`". When set, this provider is
+    /// only fetched on refresh cycles where `now - lastFetched[id] >=
+    /// override` has elapsed, so a slow / rate-limited provider can be polled
+    /// less often than a fast one.
+    private var providerIntervals: [String: TimeInterval] = [:]
+    private var providerLastFetched: [String: Date] = [:]
+
+    /// Read a provider's refresh override from UserDefaults (0 = use
+    /// global). Used by `refresh()` to decide whether to fetch this cycle.
+    private static func overrideInterval(for providerId: String) -> TimeInterval {
+        UserDefaults.standard.double(forKey: "refreshInterval.\(providerId)")
+    }
+
+    /// Set or clear a provider's refresh override. Pass 0 to fall back to
+    /// the global interval (the default).
+    static func setOverrideInterval(_ seconds: TimeInterval, for providerId: String) {
+        UserDefaults.standard.set(seconds, forKey: "refreshInterval.\(providerId)")
+    }
+
+    /// Effective refresh interval for a provider: its override if non-zero,
+    /// otherwise the global one.
+    private func effectiveInterval(for providerId: String) -> TimeInterval {
+        let override = Self.overrideInterval(for: providerId)
+        return override > 0 ? override : interval
+    }
+
     func refresh() async {
         isRefreshing = true
         defer { isRefreshing = false }
         let snapshot = providers
         let startedAt = Date()
         let log = Logger(subsystem: "com.local.birdnion", category: "quota.refresh")
-        log.info("refresh start — providers=\(snapshot.count, privacy: .public)")
+
+        // Per-provider throttling: skip a provider if its individual override
+        // interval hasn't elapsed since the last successful fetch. The
+        // global `interval` is still the loop cadence; this only stops
+        // re-polling providers whose own setting says "wait longer".
+        let due: [QuotaProvider] = snapshot.filter { p in
+            let interval = effectiveInterval(for: p.id)
+            guard interval > 0 else { return true }
+            guard let last = providerLastFetched[p.id] else { return true }
+            return Date().timeIntervalSince(last) >= interval
+        }
+        log.info("refresh start — due=\(due.count, privacy: .public)/\(snapshot.count, privacy: .public)")
 
         // Publish statuses progressively as each provider completes — so the
         // menu-bar popover stops showing 'Đang tải…' as soon as the first
         // provider returns instead of waiting for the slowest one (which
         // can be Codex at 30s timeout on first cold call).
         await withTaskGroup(of: (String, ProviderStatus, TimeInterval).self) { group in
-            for p in snapshot {
+            for p in due {
                 group.addTask {
                     let t0 = Date()
                     do {
@@ -142,6 +196,7 @@ final class QuotaService: ObservableObject {
             var timings: [(String, TimeInterval)] = []
             for await (id, status, elapsed) in group {
                 pending[id] = status
+                providerLastFetched[id] = Date()
                 timings.append((id, elapsed))
                 // Re-publish on each completion so the popover updates
                 // incrementally (tab appears, then fills in).

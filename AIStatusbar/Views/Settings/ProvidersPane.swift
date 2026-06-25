@@ -130,6 +130,7 @@ struct ProvidersPane: View {
         }
         rows.insert(item, at: insertReal)
         saveAll()
+        NotificationCenter.default.post(name: .aistatusbarProvidersChanged, object: nil)
         NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
     }
 
@@ -249,17 +250,12 @@ struct ProvidersPane: View {
                 guard let idx = rows.firstIndex(where: { $0.id == id }) else { return }
                 rows[idx].enabled = newValue
                 saveAll()
-                // Toggling a provider on/off adds/removes it from the
-                // QuotaService provider list so the menu-bar popover
-                // immediately reflects the change.
-                if newValue {
-                    if let cfg = rows.first(where: { $0.id == id }) {
-                        quota.add(makeProvider(from: cfg))
-                        NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
-                    }
-                } else {
-                    quota.remove(id: id)
-                }
+                // Rebuild providers via ServicesContainer so the menu-bar
+                // popover + rotation pick up the new state. Use the
+                // notification path so the rebuild happens on the main
+                // thread via AppDelegate (single source of truth).
+                NotificationCenter.default.post(name: .aistatusbarProvidersChanged, object: nil)
+                NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
             })
     }
 
@@ -267,29 +263,9 @@ struct ProvidersPane: View {
     /// delegate to know when to activate the row's drop indicator).
     @State private var draggedRowId: String?
 
-    /// Construct a QuotaProvider instance from a ProviderConfig — mirrors
-    /// ServicesContainer.init's switch. Kept here so toggling a checkbox
-    /// on/off can add/remove providers without a full ServicesContainer
-    /// rebuild.
-    private func makeProvider(from cfg: ProviderConfig) -> QuotaProvider {
-        switch cfg.id {
-        case "minimax": return MiniMaxProvider(keychain: keychain)
-        case "codex":   return CodexProvider()
-        case "hapo":
-            let hapoConfig = HapoHubConfig(
-                id: cfg.id,
-                displayName: cfg.displayName ?? "AIHub",
-                baseURL: cfg.baseURL ?? HapoHubConfig.real.baseURL,
-                authHeaderTemplate: HapoHubConfig.real.authHeaderTemplate,
-                jsonPath: HapoHubConfig.real.jsonPath)
-            return HapoHubFactory.make(session: .shared, config: hapoConfig, keychain: keychain)
-        case "openrouter": return OpenRouterProvider(keychain: keychain)
-        case "deepseek":   return DeepSeekProvider(keychain: keychain)
-        case "zai":        return ZaiProvider(keychain: keychain)
-        case "claude":     return ClaudeProvider()
-        default:           return CodexProvider() // safe fallback; QuotaService skips unknown
-        }
-    }
+    // makeProvider was moved to `ServicesContainer.makeProviders(keychain:)`
+// so the same factory powers init() and the live rebuild path triggered
+// by .aistatusbarProvidersChanged.
 
     @ViewBuilder
     private func statusDot(for row: ProviderConfig) -> some View {
@@ -840,7 +816,78 @@ struct ProvidersPane: View {
                 }
                 claudeOAuthKeychainPromptPicker()
             }
+
+            // Per-provider refresh interval — applies to every provider.
+            // Stored in UserDefaults under "refreshInterval.<id>" and read
+            // by QuotaService.effectiveInterval(for:) at the start of each
+            // refresh cycle. 0 = use the global QuotaService interval.
+            providerRefreshIntervalPicker(for: row)
         }
+    }
+
+    /// Universal "refresh every" picker. Options cover the same range as the
+    /// global QuotaService interval plus a "Use global (X)" row that shows
+    /// the inherited cadence so the user can tell what they're falling
+    /// back to. Mirrors CodexBar's per-provider override pattern.
+    @ViewBuilder
+    private func providerRefreshIntervalPicker(for row: ProviderConfig) -> some View {
+        SettingsRowDivider()
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Làm mới mỗi")
+                    .font(.system(size: 13, weight: .semibold))
+                Text("Mặc định = theo cài đặt chung (\(globalIntervalLabel))")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer(minLength: 8)
+            Picker("", selection: Binding(
+                get: { Self.providerRefreshSeconds(row.id) },
+                set: { newValue in
+                    Self.setProviderRefreshSeconds(row.id, newValue)
+                    NotificationCenter.default.post(name: .aistatusbarProvidersChanged, object: nil)
+                    NotificationCenter.default.post(name: .aistatusbarRefresh, object: nil)
+                }
+            )) {
+                ForEach(Self.providerRefreshOptions, id: \.seconds) { opt in
+                    Text(opt.label).tag(opt.seconds)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(width: 150)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    /// Pre-defined options for the per-provider refresh picker. `seconds = 0`
+    /// means "use global"; the other values are absolute.
+    private static let providerRefreshOptions: [(seconds: Double, label: String)] = [
+        (0, "Mặc định chung"),
+        (30, "30 giây"),
+        (60, "1 phút"),
+        (120, "2 phút"),
+        (300, "5 phút"),
+        (600, "10 phút"),
+        (1800, "30 phút"),
+    ]
+
+    private static func providerRefreshSeconds(_ id: String) -> Double {
+        UserDefaults.standard.double(forKey: "refreshInterval.\(id)")
+    }
+
+    private static func setProviderRefreshSeconds(_ id: String, _ seconds: Double) {
+        UserDefaults.standard.set(seconds, forKey: "refreshInterval.\(id)")
+    }
+
+    /// Human-readable label for the global interval — used in the picker
+    /// subtitle so the user knows what "Mặc định chung" falls back to.
+    private var globalIntervalLabel: String {
+        let secs = settings.refreshIntervalSeconds
+        if secs >= 3600 { return "\(Int(secs / 3600)) giờ" }
+        if secs >= 60 { return "\(Int(secs / 60)) phút" }
+        return "\(Int(secs)) giây"
     }
 
     // MARK: - Claude parity pickers

@@ -215,8 +215,8 @@ struct ProviderHeaderCard: View {
             Image("ProviderLogo")
                 .resizable()
                 .interpolation(.high)
-                .frame(width: 50, height: 50)
-                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .frame(width: 48, height: 48)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(status.displayName)
                     .font(.system(size: 14, weight: .semibold))
@@ -250,20 +250,12 @@ struct ProviderHeaderCard: View {
                 }
             }
             Spacer(minLength: 6)
-            if isPlaceholder {
-                // Replace the OK/error pill with a neutral placeholder so
-                // the user can tell the card exists but hasn't reported yet.
-                Text("—")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(VocabbyTheme.tertiary)
-            } else {
-                StatusPill(ok: !hasError, errorCount: hasError ? 1 : 0)
-            }
+            MenuBarVisibilityToggle(providerId: status.id, hasError: hasError)
         }
         // Padding is tighter than the standard vocabbyCard (12pt) so the
-        // taller 50pt logo doesn't grow the card height.
-        .padding(.horizontal, 12)
-        .padding(.vertical, 1)
+        // taller 48pt logo doesn't grow the card height.
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
         .background(VocabbyTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 1)
@@ -444,27 +436,44 @@ struct ActionRow: View {
     }
 }
 
-// MARK: - Status Pill
+// MARK: - Menu Bar Visibility Toggle
 
-/// Pill — blue "OK" or red "! N" depending on whether any provider is
-/// currently in an error state.
-struct StatusPill: View {
-    let ok: Bool
-    let errorCount: Int
+/// Toggle that controls whether this provider appears in the macOS menu
+/// bar rotation. When the toggle is on, the provider's frame cycles
+/// through the status bar; when off, it's hidden from the rotation.
+/// Default state is read from `MenuBarVisibility` (UserDefaults-backed).
+///
+/// A small icon on the left reflects the provider's current fetch health
+/// (green check when ok, red triangle when in error) so the toggle area
+/// still surfaces status at a glance — this replaces the old OK pill.
+struct MenuBarVisibilityToggle: View {
+    let providerId: String
+    let hasError: Bool
+
+    @State private var isOn: Bool
+
+    init(providerId: String, hasError: Bool) {
+        self.providerId = providerId
+        self.hasError = hasError
+        self._isOn = State(initialValue: MenuBarVisibility.isShown(providerId: providerId))
+    }
 
     var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+        HStack(spacing: 6) {
+            Image(systemName: hasError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                 .font(.system(size: 10, weight: .semibold))
-            Text(ok ? "OK" : "\(errorCount)")
-                .font(.system(size: 10, weight: .bold))
-                .monospacedDigit()
+                .foregroundStyle(hasError ? Color.red : VocabbyTheme.blue)
+            Toggle("", isOn: $isOn)
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .labelsHidden()
+                .help(isOn
+                    ? "Provider này đang hiển thị trên menu bar. Tắt để ẩn."
+                    : "Provider này đang ẩn khỏi menu bar. Bật để hiển thị.")
+                .onChange(of: isOn) { newValue in
+                    MenuBarVisibility.setShown(providerId: providerId, to: newValue)
+                }
         }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(ok ? VocabbyTheme.blue : Color.red)
-        .clipShape(Capsule())
     }
 }
 
@@ -687,4 +696,9 @@ struct ClaudeUsageChartCard: View {
 
 extension Notification.Name {
     static let aistatusbarRefresh = Notification.Name("com.local.birdnion.refresh")
+    /// Posted by the Settings sidebar when the provider list changes
+    /// (reorder, toggle, add, remove). AppDelegate listens and rebuilds
+    /// QuotaService.providers from disk so the popover + menu-bar pick up
+    /// the new order without a restart.
+    static let aistatusbarProvidersChanged = Notification.Name("com.local.birdnion.providersChanged")
 }
