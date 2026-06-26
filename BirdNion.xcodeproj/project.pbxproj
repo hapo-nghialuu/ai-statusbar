@@ -61,6 +61,7 @@
 		CPFL0001000000000000B001 /* CodexPlanFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPFL0002000000000000F001 /* CodexPlanFormatting.swift */; };
 		CPFL0003000000000000B002 /* CodexRateWindowNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPFL0004000000000000F002 /* CodexRateWindowNormalizer.swift */; };
 		C0DE0007000000000000B004 /* CodexProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0008000000000000F004 /* CodexProviderTests.swift */; };
+		CCST0001000000000000B001 /* CodexCostScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCST0002000000000000F001 /* CodexCostScannerTests.swift */; };
 
 		EEEE0004000000000000B001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEEE0003000000000000F001 /* Assets.xcassets */; };
 		FFFF0001000000000000B001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF0002000000000000F001 /* AppDelegate.swift */; };
@@ -91,6 +92,7 @@
 		CCCC000A000000000000F005 /* QuotaServicePollingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/QuotaServicePollingTests.swift; sourceTree = "<group>"; };
 		CCCC000E000000000000F007 /* StubURLProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/StubURLProtocol.swift; sourceTree = "<group>"; };
 		C0DE0008000000000000F004 /* CodexProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/CodexProviderTests.swift; sourceTree = "<group>"; };
+		CCST0002000000000000F001 /* CodexCostScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/CodexCostScannerTests.swift; sourceTree = "<group>"; };
 		CCCC0010000000000000F008 /* BirdNionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BirdNionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDDD0004000000000000F002 /* ConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Services/ConfigService.swift; sourceTree = "<group>"; };
 		DDDD0006000000000000F003 /* QuotaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Services/QuotaService.swift; sourceTree = "<group>"; };
@@ -176,6 +178,7 @@
 				CCCC0009000000000000B005 /* QuotaServicePollingTests.swift in Sources */,
 				CCCC000D000000000000B007 /* StubURLProtocol.swift in Sources */,
 				C0DE0007000000000000B004 /* CodexProviderTests.swift in Sources */,
+				CCST0001000000000000B001 /* CodexCostScannerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
