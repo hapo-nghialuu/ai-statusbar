@@ -138,6 +138,7 @@ final class CodexProvider: QuotaProvider {
             accountLabel: label,
             planType: CodexPlanFormatting.displayName(usage.planType),
             creditsRemaining: usage.credits ?? web?.creditsRemaining,
+            creditsUnlimited: usage.creditsUnlimited,
             version: version,
             serviceStatus: service?.description,
             serviceStatusLevel: service?.indicator,
@@ -377,7 +378,19 @@ struct CodexCLIUsage: Equatable {
     let windows: [QuotaWindow]
     let planType: String?
     let credits: Double?
+    /// True when the account's credits are unlimited (RPC reports this; the
+    /// balance is then meaningless and the UI shows "∞").
+    let creditsUnlimited: Bool
     let email: String?
+
+    init(windows: [QuotaWindow], planType: String?, credits: Double?,
+         creditsUnlimited: Bool = false, email: String?) {
+        self.windows = windows
+        self.planType = planType
+        self.credits = credits
+        self.creditsUnlimited = creditsUnlimited
+        self.email = email
+    }
 }
 
 // MARK: - codex-cli version probe

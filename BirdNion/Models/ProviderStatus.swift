@@ -107,6 +107,9 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
     let planType: String?
     /// Remaining credit balance (Codex `credits.balance`). nil when absent.
     let creditsRemaining: Double?
+    /// True when credits are unlimited (Codex CLI RPC reports this); the UI then
+    /// shows "∞" instead of a number. Defaults false.
+    let creditsUnlimited: Bool
     /// Detected CLI version string, e.g. "codex-cli 0.140.0-alpha.19".
     let version: String?
     /// Provider service-status text, e.g. "All Systems Operational".
@@ -155,6 +158,7 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
          accountLabel: String? = nil,
          planType: String? = nil,
          creditsRemaining: Double? = nil,
+         creditsUnlimited: Bool = false,
          version: String? = nil,
          serviceStatus: String? = nil,
          serviceStatusLevel: String? = nil,
@@ -173,6 +177,7 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
         self.accountLabel = accountLabel
         self.planType = planType
         self.creditsRemaining = creditsRemaining
+        self.creditsUnlimited = creditsUnlimited
         self.version = version
         self.serviceStatus = serviceStatus
         self.serviceStatusLevel = serviceStatusLevel

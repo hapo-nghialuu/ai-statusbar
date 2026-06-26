@@ -160,6 +160,23 @@ final class CodexProviderTests: XCTestCase {
         XCTAssertEqual(status?.planType, "Pro 20x")
     }
 
+    func testCLICreditsUnlimitedFlowsThrough() throws {
+        let session = URLSession(configuration: makeStubConfig())
+        defer { StubURLProtocol.reset() }
+        let cli = CodexCLIUsage(
+            windows: [QuotaWindow(label: "5 giờ", usedPct: 0, remainingPct: 100)],
+            planType: nil, credits: nil, creditsUnlimited: true, email: nil)
+        let p = CodexProvider(session: session, authURL: tempURL(), source: .cli,
+                              statusProbe: { nil }, versionProbe: { nil },
+                              cliUsageProbe: { cli })
+        let exp = expectation(description: "fetch")
+        var status: ProviderStatus?
+        Task { status = try? await p.fetch(); exp.fulfill() }
+        wait(for: [exp], timeout: 2)
+        XCTAssertEqual(status?.creditsUnlimited, true)
+        XCTAssertNil(status?.creditsRemaining)
+    }
+
     func testSourceOAuthDoesNotFallBackToCLI() throws {
         let url = tempURL()
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

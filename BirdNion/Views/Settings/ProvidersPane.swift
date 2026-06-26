@@ -395,6 +395,13 @@ struct ProvidersPane: View {
                 if let n = web.creditsHistoryCount {
                     infoRow("Lịch sử credits", "\(n) mục")
                 }
+                if let url = web.creditsPurchaseURL, let u = URL(string: url) {
+                    GridRow {
+                        Text("Mua credits").gridColumnAlignment(.leading)
+                        Link("Mở trang", destination: u)
+                            .font(.system(size: 12))
+                    }
+                }
             }
             if let err = s?.error {
                 infoRow("Lỗi", err)
@@ -449,9 +456,9 @@ struct ProvidersPane: View {
                     quotaWindowRow(w)
                     if i < s.windows.count - 1 { SettingsRowDivider() }
                 }
-                if let credits = s.creditsRemaining {
+                if s.creditsRemaining != nil || s.creditsUnlimited {
                     SettingsRowDivider()
-                    creditsRow(credits)
+                    creditsRow(s.creditsRemaining, unlimited: s.creditsUnlimited)
                 }
             } else if s == nil || s?.windows.isEmpty == true {
                 // Empty placeholder only when there's truly no data — cost /
@@ -546,14 +553,14 @@ struct ProvidersPane: View {
 
     /// Remaining credit balance line (Codex). Shown only when the provider
     /// reports a credits figure.
-    private func creditsRow(_ credits: Double) -> some View {
+    private func creditsRow(_ credits: Double?, unlimited: Bool) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text("CREDITS")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .tracking(0.5)
             Spacer()
-            Text(creditsText(credits))
+            Text(unlimited ? "∞ Không giới hạn" : creditsText(credits ?? 0))
                 .font(.system(size: 12, weight: .semibold).monospacedDigit())
         }
         .padding(.horizontal, 14)

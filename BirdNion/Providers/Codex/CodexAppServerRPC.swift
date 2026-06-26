@@ -80,6 +80,7 @@ enum CodexAppServerRPC {
             windows: windows,
             planType: plan,
             credits: credits,
+            creditsUnlimited: limits.rateLimits.credits?.unlimited ?? false,
             email: account?.account?.email)
     }
 
