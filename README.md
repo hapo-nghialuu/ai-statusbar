@@ -4,7 +4,7 @@
 
 [![Latest release](https://img.shields.io/github/v/release/hapo-nghialuu/BirdNion?style=flat-square&color=0a0a0c)](https://github.com/hapo-nghialuu/BirdNion/releases/latest)
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-0a0a0c?style=flat-square)](https://github.com/hapo-nghialuu/BirdNion/releases/latest)
-[![Homebrew](https://img.shields.io/badge/brew-hapo--nghialuu%2Ftap%2Fbirdnion-orange?style=flat-square)](https://github.com/hapo-nghialuu/homebrew-tap)
+[![Homebrew](https://img.shields.io/badge/brew-hapo--nghialuu%2FBirdNion%2Fbirdnion-orange?style=flat-square)](https://github.com/hapo-nghialuu/BirdNion)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6e5aff?style=flat-square)](LICENSE)
 
 A focused fork / extension of [CodexBar](https://github.com/steipete/CodexBar)'s "track every AI coding limit" idea, scoped to the **7 providers BOSS actually uses** (MiniMax, Codex, Claude, Hapo AI Hub, OpenRouter, DeepSeek, z.ai). One status item per provider, popover with usage bars + reset countdowns, local token scanner for Claude, full Claude parity. No Dock icon.
@@ -35,7 +35,7 @@ A focused fork / extension of [CodexBar](https://github.com/steipete/CodexBar)'s
 
 ### Homebrew (recommended)
 ```bash
-brew install --cask hapo-nghialuu/tap/birdnion
+brew install --cask hapo-nghialuu/BirdNion/birdnion
 ```
 
 The cask's `postflight` step auto-strips the Gatekeeper quarantine flag (BirdNion is ad-hoc signed for free distribution — no Apple Developer account required). If macOS still blocks the first launch, Right-click → Open → Open.
@@ -139,7 +139,6 @@ API keys in the Settings UI render masked: `fe_oa_••••4a8`.
 - [docs/build.md](docs/build.md) — full build / deploy / release flow, env-var reference, troubleshooting, signing notes
 - [docs/system-architecture.md](docs/system-architecture.md) — provider data model, refresh loop, storage layout, UI structure, decision register
 - [docs/development-roadmap.md](docs/development-roadmap.md) — phase history, current status, backlog
-- [homebrew-tap](https://github.com/hapo-nghialuu/homebrew-tap) — Cask source + GitHub releases
 
 ## Development
 
@@ -193,7 +192,6 @@ Reused from CodexBar (via the local `CodexBarCore` SPM):
 
 - [CodexBar](https://github.com/steipete/CodexBar) — the upstream this fork draws on. 53+ providers, App Store version, macOS-native, MIT.
 - [ccusage](https://github.com/ryoppippi/ccusage) — Claude Code cost-usage CLI (MIT). BirdNion's local `ClaudeCostScanner` reads the same `~/.claude/projects/*.jsonl` files.
-- [homebrew-tap](https://github.com/hapo-nghialuu/homebrew-tap) — the Cask + releases that host BirdNion's pre-built bundles.
 
 ## License
 

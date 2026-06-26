@@ -2,18 +2,21 @@
 # Build, package, and publish a new BirdNion release.
 #
 # Usage:
-#   Scripts/release.sh 0.3.0                # bump + build + push release + update cask
-#   Scripts/release.sh 0.3.0 --skip-build   # bump versions only, assume pre-built
-#   Scripts/release.sh 0.3.0 --dry-run      # print what would happen, no side effects
+#   Scripts/release.sh 0.3.1                # bump + build + push release + update cask
+#   Scripts/release.sh 0.3.1 --skip-build   # bump versions only, assume pre-built
+#   Scripts/release.sh 0.3.1 --dry-run      # print what would happen, no side effects
 #
 # What it does, in order:
-#   1. Verify clean working tree (no uncommitted changes) — skip with --skip-build
+#   1. Verify clean working tree (no uncommitted changes)
 #   2. Update MARKETING_VERSION + CFBundleShortVersionString in source
 #   3. xcodebuild -quiet build the Release .app
 #   4. Copy build/Release/BirdNion.app → ~/Desktop/BirdNion.app
 #   5. Zip → ~/Desktop/BirdNion-<version>.zip
-#   6. gh release create/upload v<version> on BirdNion repo
-#   7. Compute zip SHA, update Casks/birdnion.rb, push tap repo
+#   6. gh release create/upload v<version> on hapo-nghialuu/BirdNion
+#   7. Update Casks/birdnion.rb (version + sha256), commit + push to same repo
+#
+# Install after release:
+#   brew install --cask hapo-nghialuu/BirdNion/birdnion
 #
 # Filename uses `BirdNion-<version>.zip` (no `v` prefix) to work around a
 # GitHub release-asset upload cache that returns BlobNotFound for
@@ -34,18 +37,17 @@ done
 
 if [[ -z "$VERSION" ]]; then
   echo "Usage: $0 <version> [--skip-build] [--dry-run]" >&2
-  echo "  e.g. $0 0.3.0" >&2
+  echo "  e.g. $0 0.3.1" >&2
   exit 1
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ASSET_REPO="hapo-nghialuu/BirdNion"   # where the zip lives (GitHub Releases)
-TAP_REPO="hapo-nghialuu/homebrew-tap"  # where the cask ruby file lives
+ASSET_REPO="hapo-nghialuu/BirdNion"
 ZIP_NAME="BirdNion-${VERSION}.zip"
 DESKTOP="$HOME/Desktop"
 
 if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Version must be semver (e.g. 0.3.0), got: $VERSION" >&2
+  echo "Version must be semver (e.g. 0.3.1), got: $VERSION" >&2
   exit 1
 fi
 
@@ -93,12 +95,6 @@ if [[ "$SKIP_BUILD" -eq 0 ]]; then
       build
 fi
 
-# xcodebuild normally parks the .app in ~/Library/Developer/Xcode/
-# DerivedData/<hash>/Build/Products/<conf>/<target>.app, but we
-# force -derivedDataPath to a local build/ tree above so the path
-# is stable + grep-friendly. (If a previous run wrote elsewhere,
-# fall back to the canonical DerivedData path so --skip-build still
-# works against an out-of-tree build.)
 BUILT_APP="$REPO_ROOT/build/DerivedData/Build/Products/Release/BirdNion.app"
 if [[ ! -d "$BUILT_APP" ]]; then
   BUILT_APP=$(find ~/Library/Developer/Xcode/DerivedData \
@@ -113,10 +109,12 @@ fi
 echo "==> Packaging"
 run rm -rf "$DESKTOP/BirdNion.app"
 run cp -R "$BUILT_APP" "$DESKTOP/BirdNion.app"
-ACTUAL_VER=$(plutil -extract CFBundleShortVersionString raw "$DESKTOP/BirdNion.app/Contents/Info.plist")
-if [[ "$ACTUAL_VER" != "$VERSION" ]]; then
-  echo "Bundle version mismatch: requested $VERSION, got $ACTUAL_VER" >&2
-  exit 1
+if [[ "$DRY_RUN" -eq 0 ]]; then
+  ACTUAL_VER=$(plutil -extract CFBundleShortVersionString raw "$DESKTOP/BirdNion.app/Contents/Info.plist")
+  if [[ "$ACTUAL_VER" != "$VERSION" ]]; then
+    echo "Bundle version mismatch: requested $VERSION, got $ACTUAL_VER" >&2
+    exit 1
+  fi
 fi
 
 # 5. Zip
@@ -136,19 +134,23 @@ echo "    sha256: $ZIP_SHA"
 TAG="v${VERSION}"
 echo "==> gh release ${TAG}"
 if gh release view "$TAG" --repo "$ASSET_REPO" >/dev/null 2>&1; then
-  echo "    release $TAG exists — uploading new asset (filename avoids cache)"
+  echo "    release $TAG exists — uploading new asset"
   run gh release upload "$TAG" "$ZIP_PATH" --repo "$ASSET_REPO"
 else
   echo "    creating new release $TAG"
   run gh release create "$TAG" "$ZIP_PATH" \
     --repo "$ASSET_REPO" \
     --title "BirdNion ${TAG}" \
-    --notes-file <(git -C "$REPO_ROOT" log --no-merges --pretty=format:"- %s" "$(git -C "$REPO_ROOT" describe --tags --abbrev=0 2>/dev/null || echo HEAD)..HEAD" 2>/dev/null)
+    --notes-file <(git -C "$REPO_ROOT" log --no-merges --pretty=format:"- %s" \
+        "$(git -C "$REPO_ROOT" describe --tags --abbrev=0 2>/dev/null || echo HEAD)..HEAD" \
+        2>/dev/null)
 fi
 
-# Verify the upload actually landed
+# Verify upload
 if [[ "$DRY_RUN" -eq 0 ]]; then
-  DOWNLOAD_SHA=$(curl -sL "https://github.com/${ASSET_REPO}/releases/download/${TAG}/${ZIP_NAME}" | shasum -a 256 | awk '{print $1}')
+  DOWNLOAD_SHA=$(curl -sL \
+    "https://github.com/${ASSET_REPO}/releases/download/${TAG}/${ZIP_NAME}" \
+    | shasum -a 256 | awk '{print $1}')
   if [[ "$DOWNLOAD_SHA" != "$ZIP_SHA" ]]; then
     echo "Upload SHA mismatch! local=$ZIP_SHA downloaded=$DOWNLOAD_SHA" >&2
     exit 1
@@ -156,45 +158,33 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   echo "    upload verified: SHA matches"
 fi
 
-# 7. Update cask and push tap
-echo "==> Updating cask"
-TAP_DIR=$(brew --repository "$TAP_REPO" 2>/dev/null || echo "")
-if [[ -z "$TAP_DIR" ]] || [[ ! -d "$TAP_DIR" ]]; then
-  # Fall back to a local clone
-  TAP_DIR="$REPO_ROOT/.homebrew-tap"
-  if [[ ! -d "$TAP_DIR" ]]; then
-    run git clone "https://github.com/${TAP_REPO}.git" "$TAP_DIR"
-  fi
-  run git -C "$TAP_DIR" pull --ff-only
-fi
-
-CASK="$TAP_DIR/Casks/birdnion.rb"
+# 7. Update Casks/birdnion.rb in this repo, commit + push
+echo "==> Updating Casks/birdnion.rb"
+CASK="$REPO_ROOT/Casks/birdnion.rb"
 if [[ "$DRY_RUN" -eq 0 ]]; then
   python3 - "$CASK" "$VERSION" "$ZIP_SHA" <<'PY'
 import re, sys
 path, version, sha = sys.argv[1], sys.argv[2], sys.argv[3]
-with open(path, 'rb') as f:
+with open(path) as f:
     content = f.read()
-content = re.sub(rb'version  "\d+\.\d+\.\d+"',
-                 f'version  "{version}"'.encode(), content, count=1)
-content = re.sub(rb'sha256 "[a-f0-9]{64}"',
-                 f'sha256 "{sha}"'.encode(), content, count=1)
-content = re.sub(rb'# SHA256[^\n]*',
-                 b'# SHA256 cua BirdNion-' + version.encode() + b'.zip', content, count=1)
-with open(path, 'wb') as f:
+content = re.sub(r'version "\d+\.\d+\.\d+"', f'version "{version}"', content, count=1)
+content = re.sub(r'sha256 "[a-f0-9]{64}"', f'sha256 "{sha}"', content, count=1)
+with open(path, 'w') as f:
     f.write(content)
 PY
-  run git -C "$TAP_DIR" add Casks/birdnion.rb
-  run git -C "$TAP_DIR" commit -m "feat(cask): bump birdnion to ${VERSION}"
-  # --force-with-lease so a parallel bump (or amend) on the same cask in
-  # another terminal doesn't fail the push.
-  run git -C "$TAP_DIR" push --force-with-lease origin main
+  git -C "$REPO_ROOT" add \
+    Casks/birdnion.rb \
+    BirdNion/Info.plist \
+    BirdNion.xcodeproj/project.pbxproj
+  git -C "$REPO_ROOT" commit -m "chore: bump version to ${VERSION}"
+  git -C "$REPO_ROOT" push origin main
 fi
 
 cat <<EOF
 
 ==> Done.
-  Release:    https://github.com/${ASSET_REPO}/releases/tag/${TAG}
-  Install:    brew install --cask ${TAP_REPO}/birdnion
-  Verify:     brew reinstall --cask ${TAP_REPO}/birdnion && xattr -l /Applications/BirdNion.app
+  Release:  https://github.com/${ASSET_REPO}/releases/tag/${TAG}
+  Install:  brew install --cask hapo-nghialuu/BirdNion/birdnion
+  Upgrade:  brew upgrade birdnion
+  Verify:   brew reinstall --cask hapo-nghialuu/BirdNion/birdnion && xattr -l /Applications/BirdNion.app
 EOF
