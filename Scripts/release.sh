@@ -43,6 +43,7 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ASSET_REPO="hapo-nghialuu/BirdNion"
+TAP_REPO="hapo-nghialuu/homebrew-tap"
 ZIP_NAME="BirdNion-${VERSION}.zip"
 DESKTOP="$HOME/Desktop"
 
@@ -180,11 +181,39 @@ PY
   git -C "$REPO_ROOT" push origin main
 fi
 
+# 8. Also update homebrew-tap so `brew tap hapo-nghialuu/tap` picks up the new version
+echo "==> Updating homebrew-tap cask"
+TAP_DIR=$(brew --repository "$TAP_REPO" 2>/dev/null || echo "")
+if [[ -z "$TAP_DIR" ]] || [[ ! -d "$TAP_DIR" ]]; then
+  TAP_DIR="$REPO_ROOT/.homebrew-tap"
+  if [[ ! -d "$TAP_DIR" ]]; then
+    run git clone "https://github.com/${TAP_REPO}.git" "$TAP_DIR"
+  fi
+  run git -C "$TAP_DIR" pull --ff-only
+fi
+
+CASK_TAP="$TAP_DIR/Casks/birdnion.rb"
+if [[ "$DRY_RUN" -eq 0 ]]; then
+  python3 - "$CASK_TAP" "$VERSION" "$ZIP_SHA" <<'PY'
+import re, sys
+path, version, sha = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(path) as f:
+    content = f.read()
+content = re.sub(r'version "\d+\.\d+\.\d+"', f'version "{version}"', content, count=1)
+content = re.sub(r'sha256 "[a-f0-9]{64}"', f'sha256 "{sha}"', content, count=1)
+with open(path, 'w') as f:
+    f.write(content)
+PY
+  git -C "$TAP_DIR" add Casks/birdnion.rb
+  git -C "$TAP_DIR" commit -m "chore: bump birdnion to ${VERSION}"
+  git -C "$TAP_DIR" push --force-with-lease origin main
+fi
+
 cat <<EOF
 
 ==> Done.
   Release:  https://github.com/${ASSET_REPO}/releases/tag/${TAG}
-  Install:  brew install --cask hapo-nghialuu/BirdNion/birdnion
+  Install:  brew tap hapo-nghialuu/tap && brew install --cask birdnion
   Upgrade:  brew upgrade birdnion
-  Verify:   brew reinstall --cask hapo-nghialuu/BirdNion/birdnion && xattr -l /Applications/BirdNion.app
+  Verify:   brew reinstall --cask birdnion && xattr -l /Applications/BirdNion.app
 EOF

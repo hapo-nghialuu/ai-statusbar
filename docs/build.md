@@ -93,7 +93,7 @@ build/zip
        version, sha256
        git commit + push
               │
-              └─► User: brew install --cask hapo-nghialuu/BirdNion/birdnion
+              └─► User: brew tap hapo-nghialuu/tap && brew install --cask birdnion
                      → downloads zip
                      → copies to /Applications
                      → postflight: xattr -dr com.apple.quarantine
@@ -103,7 +103,8 @@ build/zip
 ### Verify sau khi release
 
 ```bash
-brew reinstall --cask hapo-nghialuu/BirdNion/birdnion
+brew tap hapo-nghialuu/tap
+brew reinstall --cask birdnion
 xattr -l /Applications/BirdNion.app   # should NOT contain com.apple.quarantine
 plutil -p /Applications/BirdNion.app/Contents/Info.plist | grep CFBundleShortVersionString
 ```
@@ -239,7 +240,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 | `Unable to find module dependency: 'BirdNion'` | Test chạy trước khi app build | `xcodebuild build` trước, rồi `test` |
 | Linker error `Undefined symbols ...` | Build incremental sau khi đổi `init` | `xcodebuild clean build` rồi test |
 | `release.sh` SHA mismatch on upload | GitHub release-asset cache | Đổi filename (`v0.x.y` → `0.x.y`) — script tự dùng `BirdNion-${VERSION}.zip` |
-| BirdNion mở ra dialog Gatekeeper | postflight chưa chạy / cask version cũ | `brew reinstall --cask hapo-nghialuu/BirdNion/birdnion` |
+| BirdNion mở ra dialog Gatekeeper | postflight chưa chạy / cask version cũ | `brew reinstall --cask birdnion` |
 | App icon trắng trong Finder | `ASSETCATALOG_COMPILER_APPICON_NAME` chưa set = `AppIcon` | Check project.pbxproj (đã fix ở `5e8ee0a`) |
 | Claude tab "Đang tải…" load lâu | OAuth + cookie fetch chậm khi cold | Đặt `refreshInterval.claude` lớn hơn (UI: Settings popover) |
 
