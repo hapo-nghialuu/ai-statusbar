@@ -8,8 +8,10 @@ import Foundation
 /// rate-limit windows onto our `QuotaWindow` model.
 ///
 /// Token handling mirrors CodexBar: refresh proactively when stale (>8 days)
-/// and write the rotated token back to auth.json. Because we have no Codex CLI
-/// fallback, we additionally retry once with a fresh token on a 401.
+/// and write the rotated token back to auth.json. We additionally retry once
+/// with a fresh token on a 401, then fall back to the local Codex CLI RPC
+/// (`codex app-server`, via CodexBarCore's `UsageFetcher`) so the user still
+/// sees data when the OAuth path is down.
 final class CodexProvider: QuotaProvider {
     let id = "codex"
     let displayName = "Codex"
@@ -24,22 +26,22 @@ final class CodexProvider: QuotaProvider {
     /// unrelated to the authenticated usage session).
     private let statusProbe: () async -> OpenAIServiceStatus?
     private let versionProbe: () async -> String?
-    /// CLI `/status` probe used as a fallback when the OAuth usage call fails
-    /// (token expired, server error). Injected so tests stay pure.
-    private let cliStatusProbe: () async -> CodexStatusSnapshot?
+    /// Local Codex CLI RPC probe used as a fallback when the OAuth usage call
+    /// fails (token expired, server error). Backed by CodexBarCore's
+    /// `UsageFetcher` (`codex app-server`). Injected so tests stay pure — the
+    /// default spawns a child process, which tests must not do.
+    private let cliUsageProbe: () async -> CodexCLIUsage?
 
     init(session: URLSession = .shared,
          authURL: URL? = nil,
          statusProbe: @escaping () async -> OpenAIServiceStatus? = { await OpenAIStatusProbe.fetch() },
          versionProbe: @escaping () async -> String? = { await CodexCLI.shared.version() },
-         cliStatusProbe: @escaping () async -> CodexStatusSnapshot? = {
-             try? await CodexStatusProbe.fetch()
-         }) {
+         cliUsageProbe: @escaping () async -> CodexCLIUsage? = { await CodexAppServerRPC.fetch() }) {
         self.session = session
         self.authURLOverride = authURL
         self.statusProbe = statusProbe
         self.versionProbe = versionProbe
-        self.cliStatusProbe = cliStatusProbe
+        self.cliUsageProbe = cliUsageProbe
     }
 
     func fetch() async throws -> ProviderStatus {
@@ -67,9 +69,9 @@ final class CodexProvider: QuotaProvider {
                 session: session)
             return await success(usage, credentials: credentials)
         } catch CodexUsageError.unauthorized {
-            // Reactive refresh + single retry. If still unauthorized, try the
-            // CLI `/status` probe (CodexBar's "auto" fallback chain) before
-            // giving up.
+            // Reactive refresh + single retry. If still unauthorized, fall back
+            // to the local Codex CLI RPC (CodexBar's "auto" fallback chain)
+            // before giving up.
             if !credentials.refreshToken.isEmpty,
                let refreshed = try? await CodexTokenRefresher.refresh(credentials, session: session)
             {
@@ -82,15 +84,15 @@ final class CodexProvider: QuotaProvider {
                     return await success(usage, credentials: refreshed)
                 }
             }
-            if let snap = await cliStatusProbe(), let status = await cliStatusSuccess(snap, credentials: credentials) {
-                return status
+            if let cli = await cliUsageProbe() {
+                return await cliRPCSuccess(cli, credentials: credentials)
             }
             return failure("Token Codex hết hạn — chạy `codex` để đăng nhập lại")
         } catch CodexUsageError.serverError(let code) {
-            // Server down/5xx — try the CLI probe so the user still sees
-            // something rather than a hard failure.
-            if let snap = await cliStatusProbe(), let status = await cliStatusSuccess(snap, credentials: credentials) {
-                return status
+            // Server down/5xx — try the CLI RPC so the user still sees something
+            // rather than a hard failure.
+            if let cli = await cliUsageProbe() {
+                return await cliRPCSuccess(cli, credentials: credentials)
             }
             return failure("HTTP \(code)")
         } catch CodexUsageError.invalidResponse {
@@ -100,38 +102,22 @@ final class CodexProvider: QuotaProvider {
         }
     }
 
-    /// Map a parsed `CodexStatusSnapshot` to a `ProviderStatus` (CLI fallback).
-    /// Returns nil when the snapshot has no usable window data.
-    private func cliStatusSuccess(_ snap: CodexStatusSnapshot,
-                                  credentials: CodexCredentials) async -> ProviderStatus? {
-        var windows: [QuotaWindow] = []
-        if let five = snap.fiveHourPercentLeft {
-            windows.append(QuotaWindow(label: "5 giờ",
-                                       usedPct: 100 - five,
-                                       remainingPct: five,
-                                       resetDate: snap.fiveHourResetsAt,
-                                       windowSeconds: 5 * 3600))
-        }
-        if let week = snap.weeklyPercentLeft {
-            windows.append(QuotaWindow(label: "Tuần",
-                                       usedPct: 100 - week,
-                                       remainingPct: week,
-                                       resetDate: snap.weeklyResetsAt,
-                                       windowSeconds: 7 * 24 * 3600))
-        }
-        guard !windows.isEmpty else { return nil }
+    /// Map a Codex CLI RPC result to a `ProviderStatus` (the OAuth fallback).
+    /// Side data (status page, CLI version) is best-effort, like `success`.
+    private func cliRPCSuccess(_ usage: CodexCLIUsage,
+                               credentials: CodexCredentials) async -> ProviderStatus {
         async let versionTask = versionProbe()
         let service: OpenAIServiceStatus? = Self.statusChecksEnabled ? await statusProbe() : nil
         let version = await versionTask
         return ProviderStatus(
             id: id,
             displayName: displayName,
-            windows: windows,
+            windows: usage.windows,
             lastUpdated: Date(),
             error: nil,
-            accountLabel: accountLabel(credentials),
-            planType: nil,
-            creditsRemaining: snap.credits,
+            accountLabel: usage.email ?? accountLabel(credentials),
+            planType: CodexPlanFormatting.displayName(usage.planType),
+            creditsRemaining: usage.credits,
             version: version,
             serviceStatus: service?.description,
             serviceStatusLevel: service?.indicator,
@@ -329,6 +315,20 @@ enum OpenAIStatusProbe {
         struct Status: Decodable { let indicator: String; let description: String }
         let status: Status
     }
+}
+
+// MARK: - Codex CLI RPC fallback (codex app-server)
+
+/// Codex usage gathered from the local Codex CLI RPC, normalized to BirdNion's
+/// model. This is the automatic fallback when the OAuth usage call fails. It
+/// replaces the old bare-`codex` `/status` PTY scrape, which could start an
+/// interactive auth flow and open browser tabs. `CodexStatusProbe` is kept for
+/// explicit manual diagnostics only.
+struct CodexCLIUsage: Equatable {
+    let windows: [QuotaWindow]
+    let planType: String?
+    let credits: Double?
+    let email: String?
 }
 
 // MARK: - codex-cli version probe

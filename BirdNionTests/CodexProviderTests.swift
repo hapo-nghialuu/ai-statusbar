@@ -248,14 +248,80 @@ final class CodexProviderTests: XCTestCase {
         }
         defer { StubURLProtocol.reset() }
 
+        // Inject an empty CLI probe so the test never spawns `codex app-server`.
         let p = CodexProvider(session: session, authURL: url,
-                              statusProbe: { nil }, versionProbe: { nil })
+                              statusProbe: { nil }, versionProbe: { nil },
+                              cliUsageProbe: { nil })
         let exp = expectation(description: "fetch")
         var status: ProviderStatus?
         Task { status = try? await p.fetch(); exp.fulfill() }
         wait(for: [exp], timeout: 2)
         XCTAssertEqual(status?.windows.count, 0)
         XCTAssertEqual(status?.error, "Token Codex hết hạn — chạy `codex` để đăng nhập lại")
+    }
+
+    // MARK: - CLI RPC fallback (codex app-server)
+
+    func testFetchFallsBackToCLIOnServerError() throws {
+        let url = tempURL()
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        let auth = #"{"tokens":{"access_token":"at","refresh_token":"rt"},"last_refresh":"\#(nowISO)"}"#
+        try auth.data(using: .utf8)!.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let session = URLSession(configuration: makeStubConfig())
+        StubURLProtocol.handler = { req in
+            // OAuth usage is down (500) → provider must fall back to the CLI probe.
+            (HTTPURLResponse(url: req.url!, statusCode: 500, httpVersion: nil, headerFields: nil)!, Data())
+        }
+        defer { StubURLProtocol.reset() }
+
+        let cli = CodexCLIUsage(
+            windows: [QuotaWindow(label: "5 giờ", usedPct: 30, remainingPct: 70)],
+            planType: "pro", credits: 5, email: "rpc@example.com")
+        let p = CodexProvider(session: session, authURL: url,
+                              statusProbe: { nil }, versionProbe: { nil },
+                              cliUsageProbe: { cli })
+        let exp = expectation(description: "fetch")
+        var status: ProviderStatus?
+        Task { status = try? await p.fetch(); exp.fulfill() }
+        wait(for: [exp], timeout: 2)
+        XCTAssertNil(status?.error)
+        XCTAssertEqual(status?.windows.count, 1)
+        XCTAssertEqual(status?.windows.first?.label, "5 giờ")
+        XCTAssertEqual(status?.planType, "Pro 20x")   // CodexPlanFormatting applied
+        XCTAssertEqual(status?.creditsRemaining, 5)
+        XCTAssertEqual(status?.accountLabel, "rpc@example.com")
+    }
+
+    func testFetchUnauthorizedFallsBackToCLI() throws {
+        let url = tempURL()
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let nowISO = ISO8601DateFormatter().string(from: Date())
+        // Empty refresh token → no reactive refresh; goes straight to CLI fallback.
+        let auth = #"{"tokens":{"access_token":"at","refresh_token":""},"last_refresh":"\#(nowISO)"}"#
+        try auth.data(using: .utf8)!.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+
+        let session = URLSession(configuration: makeStubConfig())
+        StubURLProtocol.handler = { req in
+            (HTTPURLResponse(url: req.url!, statusCode: 401, httpVersion: nil, headerFields: nil)!, Data())
+        }
+        defer { StubURLProtocol.reset() }
+
+        let cli = CodexCLIUsage(
+            windows: [QuotaWindow(label: "Tuần", usedPct: 10, remainingPct: 90)],
+            planType: nil, credits: nil, email: nil)
+        let p = CodexProvider(session: session, authURL: url,
+                              statusProbe: { nil }, versionProbe: { nil },
+                              cliUsageProbe: { cli })
+        let exp = expectation(description: "fetch")
+        var status: ProviderStatus?
+        Task { status = try? await p.fetch(); exp.fulfill() }
+        wait(for: [exp], timeout: 2)
+        XCTAssertNil(status?.error)
+        XCTAssertEqual(status?.windows.map(\.label), ["Tuần"])
     }
 
     func testFetchNotLoggedIn() throws {
