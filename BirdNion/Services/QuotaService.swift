@@ -52,17 +52,30 @@ final class QuotaService: ObservableObject {
 
     /// Replace the entire provider list with `newProviders`. Used after the
     /// user reorders or toggles providers in the Settings sidebar so the
-    /// popover tabs + menu-bar rotation pick up the new arrangement without
-    /// an app restart. Cached `statuses` are dropped (the next refresh
-    /// repopulates them), and a refresh is fired on the next loop tick.
+    /// Replace the entire provider list with `newProviders`. Used after the
+    /// user reorders or toggles providers in the Settings sidebar so the
+    /// popover tabs + menu-bar rotation pick up the new arrangement
+    /// without an app restart. **Cached statuses are preserved** across
+    /// this call — we only drop entries for providers that are no longer
+    /// in the list. Clearing `statuses` entirely would leave every pill
+    /// showing "Chưa tải" until the next refresh cycle completes, which
+    /// can take 10–15s when Codex + Claude both time out (see the Claude
+    /// 12s timeout in `ClaudeProvider`). Preserving the cache means the
+    /// popover shows the *previous* good data for unchanged providers
+    /// while a single click of the Refresh button races.
     func setProviders(_ newProviders: [QuotaProvider]) {
         providers = newProviders
-        statuses = []
-        // Drop cached last-fetched timestamps for providers no longer in the
-        // list, otherwise the per-provider throttle could skip a fresh
-        // provider's first poll under the right timing.
         let keep = Set(newProviders.map(\.id))
+        statuses = statuses.filter { keep.contains($0.id) }
+        // Drop cached last-fetched timestamps for providers no longer in
+        // the list, otherwise the per-provider throttle could skip a fresh
+        // provider's first poll under the right timing.
         providerLastFetched = providerLastFetched.filter { keep.contains($0.key) }
+        // Re-sort cached statuses to match the new providers order. Stale
+        // entries keep their old lastUpdated; that's intentional — the
+        // next refresh will overwrite them anyway.
+        var byId = Dictionary(uniqueKeysWithValues: statuses.map { ($0.id, $0) })
+        statuses = providers.compactMap { byId.removeValue(forKey: $0.id) }
         rebuildDisplayStatuses()
     }
 
