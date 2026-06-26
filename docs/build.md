@@ -74,15 +74,15 @@ Scripts/release.sh 0.3.0
 #   2. Bump MARKETING_VERSION + CFBundleShortVersionString
 #   3. xcodebuild Release
 #   4. Copy + zip + shasum
-#   5. gh release upload lên hapo-nghialuu/homebrew-tap
+#   5. gh release upload lên hapo-nghialuu/BirdNion
 #   6. Update + push Casks/birdnion.rb với version + SHA mới
 ```
 
 ### Release flow
 
 ```
-[Local]                    [GitHub: homebrew-tap]
-─────────                   ──────────────────────
+[Local]                    [GitHub: hapo-nghialuu/BirdNion]
+─────────                   ────────────────────────────────
 build/zip
   │
   ├─► gh release create vX.Y.Z + upload zip
@@ -90,10 +90,10 @@ build/zip
   │     └─► Release page (zip available)
   │
   └─► update Casks/birdnion.rb:
-       version, sha256, url
+       version, sha256
        git commit + push
               │
-              └─► User: brew install --cask hapo-nghialuu/tap/birdnion
+              └─► User: brew install --cask hapo-nghialuu/BirdNion/birdnion
                      → downloads zip
                      → copies to /Applications
                      → postflight: xattr -dr com.apple.quarantine
@@ -103,7 +103,7 @@ build/zip
 ### Verify sau khi release
 
 ```bash
-brew reinstall hapo-nghialuu/tap/birdnion
+brew reinstall --cask hapo-nghialuu/BirdNion/birdnion
 xattr -l /Applications/BirdNion.app   # should NOT contain com.apple.quarantine
 plutil -p /Applications/BirdNion.app/Contents/Info.plist | grep CFBundleShortVersionString
 ```
@@ -239,7 +239,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 | `Unable to find module dependency: 'BirdNion'` | Test chạy trước khi app build | `xcodebuild build` trước, rồi `test` |
 | Linker error `Undefined symbols ...` | Build incremental sau khi đổi `init` | `xcodebuild clean build` rồi test |
 | `release.sh` SHA mismatch on upload | GitHub release-asset cache | Đổi filename (`v0.x.y` → `0.x.y`) — script tự dùng `BirdNion-${VERSION}.zip` |
-| BirdNion mở ra dialog Gatekeeper | postflight chưa chạy / cask version cũ | `brew reinstall --cask hapo-nghialuu/tap/birdnion` |
+| BirdNion mở ra dialog Gatekeeper | postflight chưa chạy / cask version cũ | `brew reinstall --cask hapo-nghialuu/BirdNion/birdnion` |
 | App icon trắng trong Finder | `ASSETCATALOG_COMPILER_APPICON_NAME` chưa set = `AppIcon` | Check project.pbxproj (đã fix ở `5e8ee0a`) |
 | Claude tab "Đang tải…" load lâu | OAuth + cookie fetch chậm khi cold | Đặt `refreshInterval.claude` lớn hơn (UI: Settings popover) |
 
@@ -250,4 +250,4 @@ curl -H "Authorization: Bearer $TOKEN" \
 - `docs/build.md` — file này
 - `docs/system-architecture.md` — kiến trúc providers
 - `docs/development-roadmap.md` — phases đã xong + còn lại
-- External: [homebrew-tap](https://github.com/hapo-nghialuu/homebrew-tap) — Cask + releases
+- `Casks/birdnion.rb` — Homebrew cask (trong repo này)
