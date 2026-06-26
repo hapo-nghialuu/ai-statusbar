@@ -185,7 +185,9 @@ with open(path, 'wb') as f:
 PY
   run git -C "$TAP_DIR" add Casks/birdnion.rb
   run git -C "$TAP_DIR" commit -m "feat(cask): bump birdnion to ${VERSION}"
-  run git -C "$TAP_REPO_TAPDIR" push origin main 2>/dev/null || run git -C "$TAP_DIR" push origin main
+  # --force-with-lease so a parallel bump (or amend) on the same cask in
+  # another terminal doesn't fail the push.
+  run git -C "$TAP_DIR" push --force-with-lease origin main
 fi
 
 cat <<EOF
