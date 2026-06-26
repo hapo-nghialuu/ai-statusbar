@@ -11,13 +11,13 @@ A focused fork / extension of [CodexBar](https://github.com/steipete/CodexBar)'s
 
 ## What you get
 
-> 🪶 **Một con chim giúp bạn theo dõi AI quota — và cài đặt cho AI tool coding chỉ với 1 lần bấm.**
+> 🪶 **One bird to watch every AI quota — and set up your AI coding tools in a single click.**
 
-- 👀 **Theo dõi** — menu-bar icon rotates through your providers, popover shows per-window usage bars (session / weekly / monthly) with reset countdowns. Never start a long task without knowing when the clock resets.
-- 🔌 **Cài đặt 1 lần** — drop a token in Settings → Providers and BirdNion auto-detects CLI sessions for Codex (`~/.codex/auth.json`) and Claude (Keychain `Claude Code-credentials`). No copy-paste the same OAuth URL 5 times.
-- 🧮 **Đếm chi phí** — Claude token usage parsed from `~/.claude/projects/*.jsonl` (today + 30-day) so you know *exactly* what you spent, not just what the API says.
-- 🛡 **Bảo mật** — file-based config, no Keychain, no background disk scan, no third-party telemetry. Tokens live in `~/.birdnion/settings.json` with `chmod 600`.
-- 🪶 **Không gây tiếng ồn** — no Dock icon, no notifications unless you cross a threshold, no waiting on a slow provider (each tab fills in independently).
+- 👀 **Watch** — menu-bar icon rotates through your providers, popover shows per-window usage bars (session / weekly / monthly) with reset countdowns. Never start a long task without knowing when the clock resets.
+- 🔌 **One-time setup** — drop a token in Settings → Providers and BirdNion auto-detects CLI sessions for Codex (`~/.codex/auth.json`) and Claude (Keychain `Claude Code-credentials`). No copy-pasting the same OAuth URL 5 times.
+- 🧮 **Count the cost** — Claude token usage parsed from `~/.claude/projects/*.jsonl` (today + 30-day) so you know *exactly* what you spent, not just what the API says.
+- 🛡 **Secure** — file-based config, no Keychain, no background disk scan, no third-party telemetry. Tokens live in `~/.birdnion/settings.json` with `chmod 600`.
+- 🪶 **No noise** — no Dock icon, no notifications unless you cross a threshold, no waiting on a slow provider (each tab fills in independently).
 
 ## Why
 
@@ -170,7 +170,7 @@ The release script: bumps `CFBundleShortVersionString` + `MARKETING_VERSION`, bu
 - **`BirdNion/Providers/QuotaProvider.swift`** — minimal protocol (`id`, `displayName`, `fetch()`). No `Foundation` import so the contract is testable in isolation.
 - **`BirdNion/Providers/ClaudeProvider.swift`** — source-routing dispatcher (auto / oauth / web / cli / api), 12 s cap on the whole `fetch()` so a hung Anthropic endpoint can't block other providers' refreshes.
 - **`BirdNion/Providers/Claude/ClaudeCostScanner.swift`** — local jsonl scanner, 30-day buckets + top-model vote count.
-- **`BirdNion/Views/QuotaPanel.swift`** — popover: tabs, header card (with inline "đang cập nhật" indicator), provider card (windows), Claude 30-day chart, actions list.
+- **`BirdNion/Views/QuotaPanel.swift`** — popover: tabs, header card (with inline "updating" indicator), provider card (windows), Claude 30-day chart, actions list.
 - **`BirdNion/Views/Settings/ProvidersPane.swift`** — sidebar (search + active-first sort + drag-to-reorder + checkbox) + detail pane (token / source pickers / refresh interval / menu-bar visibility).
 - **`BirdNion/AppDelegate.swift`** + **`DropdownPanel`** — borderless NSPanel for the popover (no NSPopover triangle), NSStatusItem with a per-provider rotating frame.
 
