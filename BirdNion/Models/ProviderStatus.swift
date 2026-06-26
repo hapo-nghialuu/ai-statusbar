@@ -1,5 +1,4 @@
 import Foundation
-import CodexBarCore
 
 /// One quota window (e.g. "5 giờ" or "Tuần") reported by a provider.
 /// Matches the `<!-- contract:QuotaWindow -->` block in `specs/ai-statusbar/design.md`.

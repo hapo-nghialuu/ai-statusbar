@@ -65,6 +65,7 @@
 		EEEE0004000000000000B001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEEE0003000000000000F001 /* Assets.xcassets */; };
 		FFFF0001000000000000B001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF0002000000000000F001 /* AppDelegate.swift */; };
 		FFFF0003000000000000B002 /* ServicesContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF0004000000000000F002 /* ServicesContainer.swift */; };
+		PCST0001000000000000B001 /* ProviderCostSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = PCST0002000000000000F001 /* ProviderCostSnapshot.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 		AAAA0002000000000000F001 /* BirdNionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionApp.swift; sourceTree = "<group>"; };
 		AAAA0004000000000000F003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BBBB0002000000000000F001 /* ProviderStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderStatus.swift; sourceTree = "<group>"; };
+		PCST0002000000000000F001 /* ProviderCostSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Models/ProviderCostSnapshot.swift; sourceTree = "<group>"; };
 		BBBB0004000000000000F002 /* QuotaProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaProvider.swift; sourceTree = "<group>"; };
 		CCCC0002000000000000F001 /* ProviderStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/ProviderStatusTests.swift; sourceTree = "<group>"; };
 		CCCC0006000000000000F003 /* MiniMaxProviderParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/MiniMaxProviderParserTests.swift; sourceTree = "<group>"; };
@@ -369,6 +371,7 @@
 			files = (
 				AAAA0001000000000000B001 /* BirdNionApp.swift in Sources */,
 				BBBB0001000000000000B001 /* ProviderStatus.swift in Sources */,
+				PCST0001000000000000B001 /* ProviderCostSnapshot.swift in Sources */,
 				BBBB0003000000000000B002 /* QuotaProvider.swift in Sources */,
 				DDDD0003000000000000B002 /* ConfigService.swift in Sources */,
 				DDDD0005000000000000B003 /* QuotaService.swift in Sources */,

@@ -325,6 +325,9 @@ final class ClaudeProvider: QuotaProvider {
             },
             sourceLabel: snapshot.providerCost?.period)
 
+        // Bridge the library cost type to BirdNion's native one (single boundary).
+        let nativeCost = snapshot.providerCost.map(Self.convertCost)
+
         return ProviderStatus(
             id: "claude",
             displayName: "Claude",
@@ -332,10 +335,10 @@ final class ClaudeProvider: QuotaProvider {
             lastUpdated: Date(),
             error: nil,
             accountLabel: label,
-            creditsRemaining: Self.spendRemainingFromCost(snapshot.providerCost),
+            creditsRemaining: Self.spendRemainingFromCost(nativeCost),
             version: Self.detectedClaudeVersion(),
             planName: planName,
-            cost: snapshot.providerCost,
+            cost: nativeCost,
             webExtras: extras)
     }
 
@@ -553,7 +556,9 @@ final class ClaudeProvider: QuotaProvider {
                 do {
                     let detection = BrowserDetection()
                     let data = try await ClaudeWebAPIFetcher.fetchUsage(browserDetection: detection)
-                    return data.extraUsageCost
+                    // Convert CodexBarCore's cost type to BirdNion's native one
+                    // (the only boundary where the library type crosses in).
+                    return data.extraUsageCost.map(Self.convertCost)
                 } catch {
                     return nil
                 }
@@ -568,6 +573,21 @@ final class ClaudeProvider: QuotaProvider {
             group.cancelAll()
             return result
         }
+    }
+
+    /// Maps CodexBarCore's `ProviderCostSnapshot` onto BirdNion's native one.
+    /// Temporary bridge until the Claude web/cost path is fully ported off
+    /// CodexBarCore (then this and the `import CodexBarCore` go away).
+    private static func convertCost(_ c: CodexBarCore.ProviderCostSnapshot) -> ProviderCostSnapshot {
+        ProviderCostSnapshot(
+            used: c.used,
+            limit: c.limit,
+            currencyCode: c.currencyCode,
+            period: c.period,
+            resetsAt: c.resetsAt,
+            nextRegenAmount: c.nextRegenAmount,
+            personalUsed: c.personalUsed,
+            updatedAt: c.updatedAt)
     }
 
     // MARK: - Service status (status.anthropic.com)

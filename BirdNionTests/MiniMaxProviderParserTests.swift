@@ -1,6 +1,5 @@
 import XCTest
 @testable import BirdNion
-import CodexBarCore
 
 /// Tests for `MiniMaxProvider` parser + the providers that share its
 /// Keychain-less architecture. Uses `BirdNionConfigStore` (via an isolated
