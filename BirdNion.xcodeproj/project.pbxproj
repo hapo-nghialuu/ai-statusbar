@@ -349,9 +349,9 @@
 /* End PBXProject section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		LSP0001000000000000PR001 /* XCLocalSwiftPackageReference "../CodexBar" */ = {
+		LSP0001000000000000PR001 /* XCLocalSwiftPackageReference "Vendor/CodexBar" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../CodexBar;
+			relativePath = Vendor/CodexBar;
 		};
 /* End XCLocalSwiftPackageReference section */
 

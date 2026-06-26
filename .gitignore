@@ -22,3 +22,7 @@ xcuserdata/
 # Local dev-env script (ignored so private hostnames / keys don't ship)
 scripts/dev-env.sh
 
+
+# Vendored SwiftPM package build artifacts / local state
+Vendor/CodexBar/.build/
+Vendor/CodexBar/.swiftpm/

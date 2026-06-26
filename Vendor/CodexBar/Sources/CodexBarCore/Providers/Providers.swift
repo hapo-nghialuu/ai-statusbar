@@ -1,0 +1,263 @@
+import Foundation
+import SweetCookieKit
+
+// swiftformat:disable sortDeclarations
+public enum UsageProvider: String, CaseIterable, Sendable, Codable {
+    case codex
+    case openai
+    case azureopenai
+    case claude
+    case cursor
+    case opencode
+    case opencodego
+    case alibaba
+    case alibabatokenplan
+    case factory
+    case gemini
+    case antigravity
+    case copilot
+    case devin
+    case zai
+    case minimax
+    case manus
+    case kimi
+    case kilo
+    case kiro
+    case vertexai
+    case augment
+    case jetbrains
+    case kimik2
+    case moonshot
+    case amp
+    case t3chat
+    case ollama
+    case synthetic
+    case warp
+    case openrouter
+    case elevenlabs
+    case windsurf
+    case zed
+    case perplexity
+    case mimo
+    case doubao
+    case abacus
+    case mistral
+    case deepseek
+    case codebuff
+    case crof
+    case venice
+    case commandcode
+    case stepfun
+    case bedrock
+    case grok
+    case groq
+    case llmproxy
+    case litellm
+    case deepgram
+    case poe
+    case chutes
+}
+
+// swiftformat:enable sortDeclarations
+
+public enum IconStyle: String, Sendable, CaseIterable {
+    case codex
+    case openai
+    case claude
+    case zai
+    case minimax
+    case manus
+    case gemini
+    case antigravity
+    case cursor
+    case opencode
+    case opencodego
+    case alibaba
+    case factory
+    case copilot
+    case devin
+    case kimi
+    case kimik2
+    case kilo
+    case kiro
+    case vertexai
+    case augment
+    case jetbrains
+    case moonshot
+    case amp
+    case t3chat
+    case ollama
+    case synthetic
+    case warp
+    case openrouter
+    case elevenlabs
+    case windsurf
+    case zed
+    case perplexity
+    case mimo
+    case doubao
+    case abacus
+    case mistral
+    case deepseek
+    case codebuff
+    case crof
+    case venice
+    case commandcode
+    case stepfun
+    case bedrock
+    case grok
+    case groq
+    case llmproxy
+    case litellm
+    case deepgram
+    case poe
+    case chutes
+    case combined
+}
+
+public struct ProviderMetadata: Sendable {
+    public let id: UsageProvider
+    public let displayName: String
+    public let sessionLabel: String
+    public let weeklyLabel: String
+    public let opusLabel: String?
+    public let supportsOpus: Bool
+    public let supportsCredits: Bool
+    public let creditsHint: String
+    public let toggleTitle: String
+    public let cliName: String
+    public let defaultEnabled: Bool
+    public let isPrimaryProvider: Bool
+    public let usesAccountFallback: Bool
+    public let browserCookieOrder: BrowserCookieImportOrder?
+    public let dashboardURL: String?
+    public let subscriptionDashboardURL: String?
+    /// Provider-specific release notes or changelog URL for CLI/provider updates.
+    public let changelogURL: String?
+    /// Statuspage.io base URL for incident polling (append /api/v2/status.json).
+    public let statusPageURL: String?
+    /// Browser-only status link (no API polling); used when statusPageURL is nil.
+    public let statusLinkURL: String?
+    /// Google Workspace product ID for status polling (appsstatus dashboard).
+    public let statusWorkspaceProductID: String?
+
+    public init(
+        id: UsageProvider,
+        displayName: String,
+        sessionLabel: String,
+        weeklyLabel: String,
+        opusLabel: String?,
+        supportsOpus: Bool,
+        supportsCredits: Bool,
+        creditsHint: String,
+        toggleTitle: String,
+        cliName: String,
+        defaultEnabled: Bool,
+        isPrimaryProvider: Bool = false,
+        usesAccountFallback: Bool = false,
+        browserCookieOrder: BrowserCookieImportOrder? = nil,
+        dashboardURL: String?,
+        subscriptionDashboardURL: String? = nil,
+        changelogURL: String? = nil,
+        statusPageURL: String?,
+        statusLinkURL: String? = nil,
+        statusWorkspaceProductID: String? = nil)
+    {
+        self.id = id
+        self.displayName = displayName
+        self.sessionLabel = sessionLabel
+        self.weeklyLabel = weeklyLabel
+        self.opusLabel = opusLabel
+        self.supportsOpus = supportsOpus
+        self.supportsCredits = supportsCredits
+        self.creditsHint = creditsHint
+        self.toggleTitle = toggleTitle
+        self.cliName = cliName
+        self.defaultEnabled = defaultEnabled
+        self.isPrimaryProvider = isPrimaryProvider
+        self.usesAccountFallback = usesAccountFallback
+        self.browserCookieOrder = browserCookieOrder
+        self.dashboardURL = dashboardURL
+        self.subscriptionDashboardURL = subscriptionDashboardURL
+        self.changelogURL = changelogURL
+        self.statusPageURL = statusPageURL
+        self.statusLinkURL = statusLinkURL
+        self.statusWorkspaceProductID = statusWorkspaceProductID
+    }
+}
+
+public enum ProviderDefaults {
+    public static var metadata: [UsageProvider: ProviderMetadata] {
+        ProviderDescriptorRegistry.metadata
+    }
+}
+
+public enum ProviderBrowserCookieDefaults {
+    public static var defaultImportOrder: BrowserCookieImportOrder? {
+        #if os(macOS)
+        Browser.defaultImportOrder
+        #else
+        nil
+        #endif
+    }
+
+    /// Safari first for Cursor: active sessions often live only there, and Chromium profiles may carry stale tokens.
+    public static var cursorCookieImportOrder: BrowserCookieImportOrder? {
+        #if os(macOS)
+        [.safari] + Browser.defaultImportOrder.filter { $0 != .safari }
+        #else
+        nil
+        #endif
+    }
+
+    /// Preserve the legacy Codex prompt behavior: prefer Safari/Chrome/Firefox before
+    /// probing additional Chromium variants that may trigger Safe Storage prompts.
+    public static var codexCookieImportOrder: BrowserCookieImportOrder? {
+        #if os(macOS)
+        let preferredPrefix: [Browser] = [.safari, .chrome, .firefox]
+        return preferredPrefix + Browser.defaultImportOrder.filter { !preferredPrefix.contains($0) }
+        #else
+        nil
+        #endif
+    }
+
+    /// Grok is normally signed in through Chrome; keep this narrow so CLI/live probes do not touch
+    /// unrelated browser keychains.
+    public static var grokCookieImportOrder: BrowserCookieImportOrder? {
+        #if os(macOS)
+        [.chrome]
+        #else
+        nil
+        #endif
+    }
+
+    /// MiMo Auto: Safari first (no Keychain prompt), keep the existing Chrome-family
+    /// entries from main, and add Firefox/Edge per #1304. Other Chromium forks stay on
+    /// Manual import to avoid scanning the full SweetCookieKit default order.
+    public static var mimoCookieImportOrder: BrowserCookieImportOrder? {
+        #if os(macOS)
+        [.safari, .chrome, .chromeBeta, .chromeCanary, .firefox, .edge]
+        #else
+        nil
+        #endif
+    }
+
+    /// Devin sessions are normally in Chrome. Keep automatic import narrow so live probes do not
+    /// touch unrelated browser keychains; users can select another browser explicitly.
+    public static var devinCookieImportOrder: BrowserCookieImportOrder? {
+        #if os(macOS)
+        [.chrome]
+        #else
+        nil
+        #endif
+    }
+
+    /// Copilot budget imports should stay Chrome-only by default to avoid prompting unrelated browsers.
+    public static var copilotCookieImportOrder: BrowserCookieImportOrder? {
+        #if os(macOS)
+        [.chrome]
+        #else
+        nil
+        #endif
+    }
+}
