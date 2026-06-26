@@ -127,7 +127,7 @@ final class CodexProvider: QuotaProvider {
         let service: OpenAIServiceStatus? = Self.statusChecksEnabled ? await statusProbe() : nil
         let version = await versionTask
         let label = usage.email ?? credentials.map(accountLabel) ?? "Codex"
-        return ProviderStatus(
+        let status = ProviderStatus(
             id: id,
             displayName: displayName,
             windows: usage.windows,
@@ -141,6 +141,8 @@ final class CodexProvider: QuotaProvider {
             serviceStatusLevel: service?.indicator,
             accountID: credentials?.accountId,
             sourceLabel: "CLI")
+        cacheSnapshot(status)
+        return status
     }
 
     // MARK: - Mapping
@@ -248,7 +250,7 @@ final class CodexProvider: QuotaProvider {
         let version = await versionTask
         let reset = await resetTask
 
-        return ProviderStatus(
+        let status = ProviderStatus(
             id: id,
             displayName: displayName,
             windows: windows,
@@ -263,6 +265,16 @@ final class CodexProvider: QuotaProvider {
             accountID: credentials.accountId,
             resetCreditsAvailable: reset,
             sourceLabel: "OAuth")
+        cacheSnapshot(status)
+        return status
+    }
+
+    /// Persist the status for the active account so switching accounts shows it
+    /// immediately. Only in production (tests inject `authURL`, which would
+    /// otherwise pollute the on-disk store with the "system" key).
+    private func cacheSnapshot(_ status: ProviderStatus) {
+        guard authURLOverride == nil else { return }
+        CodexAccountSnapshotStore.shared.save(status, forAccount: CodexAccountStore.activeID())
     }
 
     /// Thin wrapper so the async-let call site stays tidy. Never throws —

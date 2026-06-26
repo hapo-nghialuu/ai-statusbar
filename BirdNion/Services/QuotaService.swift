@@ -127,6 +127,19 @@ final class QuotaService: ObservableObject {
                 }
             }
         }
+        // Codex account switch: show that account's cached snapshot instantly,
+        // then refetch (also counts as a manual interaction).
+        NotificationCenter.default.addObserver(
+            forName: .birdnionCodexAccountChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                self.applyCachedCodexStatus()
+                await RefreshInteraction.$isManual.withValue(true) {
+                    await self.refresh()
+                }
+            }
+        }
         loopTask = Task { [weak self] in
             guard let self else { return }
             await self.refresh()
@@ -170,6 +183,19 @@ final class QuotaService: ObservableObject {
     private func effectiveInterval(for providerId: String) -> TimeInterval {
         let override = Self.overrideInterval(for: providerId)
         return override > 0 ? override : interval
+    }
+
+    /// Replace the Codex status with the active account's cached snapshot so an
+    /// account switch shows its last-known numbers immediately, before the
+    /// refetch completes. No-op when nothing is cached for that account.
+    func applyCachedCodexStatus() {
+        guard let cached = CodexAccountSnapshotStore.shared.currentSnapshot() else { return }
+        if let idx = statuses.firstIndex(where: { $0.id == "codex" }) {
+            statuses[idx] = cached
+        } else {
+            statuses.append(cached)
+        }
+        rebuildDisplayStatuses()
     }
 
     func refresh() async {

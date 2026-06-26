@@ -749,6 +749,10 @@ struct ClaudeUsageChartCard: View {
 
 extension Notification.Name {
     static let birdnionRefresh = Notification.Name("com.local.birdnion.refresh")
+    /// Posted by `CodexAccountStore.setActive` when the active Codex account
+    /// changes. QuotaService swaps in that account's cached snapshot for an
+    /// instant card update, then refreshes.
+    static let birdnionCodexAccountChanged = Notification.Name("com.local.birdnion.codexAccountChanged")
     /// Posted by the Settings sidebar when the provider list changes
     /// (reorder, toggle, add, remove). AppDelegate listens and rebuilds
     /// QuotaService.providers from disk so the popover + menu-bar pick up

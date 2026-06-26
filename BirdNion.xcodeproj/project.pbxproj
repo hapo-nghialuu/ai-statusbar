@@ -58,6 +58,8 @@
 		C0DE00CA000000000000B0CA /* CodexResetCreditsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00CB000000000000F0CB /* CodexResetCreditsAPI.swift */; };
 		C0DE00CC000000000000B0CC /* CodexAppServerRPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00CD000000000000F0CD /* CodexAppServerRPC.swift */; };
 		C0DE00CE000000000000B0CE /* CodexCLILaunchGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00CF000000000000F0CF /* CodexCLILaunchGate.swift */; };
+		C0DE00D0000000000000B0D0 /* CodexSystemAccountObserver.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00D1000000000000F0D1 /* CodexSystemAccountObserver.swift */; };
+		C0DE00D2000000000000B0D2 /* CodexAccountSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE00D3000000000000F0D3 /* CodexAccountSnapshotStore.swift */; };
 		C0DE0005000000000000B003 /* CodexProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0006000000000000F003 /* CodexProvider.swift */; };
 		CPFL0001000000000000B001 /* CodexPlanFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPFL0002000000000000F001 /* CodexPlanFormatting.swift */; };
 		CPFL0003000000000000B002 /* CodexRateWindowNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPFL0004000000000000F002 /* CodexRateWindowNormalizer.swift */; };
@@ -136,6 +138,8 @@
 		C0DE00CB000000000000F0CB /* CodexResetCreditsAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexResetCreditsAPI.swift; sourceTree = "<group>"; };
 		C0DE00CD000000000000F0CD /* CodexAppServerRPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexAppServerRPC.swift; sourceTree = "<group>"; };
 		C0DE00CF000000000000F0CF /* CodexCLILaunchGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexCLILaunchGate.swift; sourceTree = "<group>"; };
+		C0DE00D1000000000000F0D1 /* CodexSystemAccountObserver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexSystemAccountObserver.swift; sourceTree = "<group>"; };
+		C0DE00D3000000000000F0D3 /* CodexAccountSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexAccountSnapshotStore.swift; sourceTree = "<group>"; };
 		C0DE0006000000000000F003 /* CodexProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexProvider.swift; sourceTree = "<group>"; };
 		CPFL0002000000000000F001 /* CodexPlanFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexPlanFormatting.swift; sourceTree = "<group>"; };
 		CPFL0004000000000000F002 /* CodexRateWindowNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Codex/CodexRateWindowNormalizer.swift; sourceTree = "<group>"; };
@@ -421,6 +425,8 @@
 				C0DE00CA000000000000B0CA /* CodexResetCreditsAPI.swift in Sources */,
 				C0DE00CC000000000000B0CC /* CodexAppServerRPC.swift in Sources */,
 				C0DE00CE000000000000B0CE /* CodexCLILaunchGate.swift in Sources */,
+				C0DE00D0000000000000B0D0 /* CodexSystemAccountObserver.swift in Sources */,
+				C0DE00D2000000000000B0D2 /* CodexAccountSnapshotStore.swift in Sources */,
 				C0DE0005000000000000B003 /* CodexProvider.swift in Sources */,
 				CPFL0001000000000000B001 /* CodexPlanFormatting.swift in Sources */,
 				CPFL0003000000000000B002 /* CodexRateWindowNormalizer.swift in Sources */,

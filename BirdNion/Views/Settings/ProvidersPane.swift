@@ -1525,7 +1525,13 @@ private struct CodexAccountsCard: View {
                 .controlSize(.small)
                 .disabled(busy)
 
-            if !account.isSystem {
+            if account.isSystem {
+                // Copy the current ~/.codex login into a managed account so it
+                // survives a later system re-login.
+                Button("Lưu thành managed") { promote() }
+                    .controlSize(.small)
+                    .disabled(busy || account.email == nil)
+            } else {
                 Button(role: .destructive) {
                     CodexAccountStore.remove(id: account.id)
                     reload()
@@ -1587,6 +1593,12 @@ private struct CodexAccountsCard: View {
         busy = true; errorText = nil
         defer { busy = false }
         do { try await CodexAccountStore.reauth(id: id); reload() }
+        catch { errorText = error.localizedDescription }
+    }
+
+    private func promote() {
+        errorText = nil
+        do { _ = try CodexAccountStore.promoteSystem(); reload() }
         catch { errorText = error.localizedDescription }
     }
 }

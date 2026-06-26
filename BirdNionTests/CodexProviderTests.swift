@@ -217,6 +217,50 @@ final class CodexProviderTests: XCTestCase {
         XCTAssertFalse(RefreshInteraction.isManual)
     }
 
+    // MARK: - Account reconciliation + snapshot cache
+
+    func testReconcileDedupesByEmail() {
+        let system = CodexAccount(id: "system", email: "a@x.com", isSystem: true, homePath: nil)
+        let managed = [
+            CodexAccount(id: "1", email: "a@x.com", isSystem: false, homePath: "/h1"),  // dup of system
+            CodexAccount(id: "2", email: "b@x.com", isSystem: false, homePath: "/h2"),  // unique
+            CodexAccount(id: "3", email: "B@x.com", isSystem: false, homePath: "/h3"),  // dup of #2 (case-insensitive)
+            CodexAccount(id: "4", email: nil, isSystem: false, homePath: "/h4"),        // unknown → kept
+        ]
+        let result = CodexAccountStore.reconcile(system: system, managed: managed)
+        XCTAssertEqual(result.map(\.id), ["system", "2", "4"])
+    }
+
+    func testSnapshotStoreRoundTrip() {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("codex-snap-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let store = CodexAccountSnapshotStore(fileURL: tmp)
+        let status = ProviderStatus(
+            id: "codex", displayName: "Codex",
+            windows: [QuotaWindow(label: "5 giờ", usedPct: 40, remainingPct: 60)],
+            lastUpdated: Date(), accountLabel: "a@x.com", sourceLabel: "OAuth")
+        store.save(status, forAccount: "acc-1")
+        XCTAssertEqual(store.snapshot(forAccount: "acc-1")?.accountLabel, "a@x.com")
+        XCTAssertNil(store.snapshot(forAccount: "other"))
+        // Persisted: a fresh instance on the same file reloads it.
+        let reopened = CodexAccountSnapshotStore(fileURL: tmp)
+        XCTAssertEqual(reopened.snapshot(forAccount: "acc-1")?.windows.first?.usedPct, 40)
+    }
+
+    func testSnapshotStoreIgnoresErrorAndEmpty() {
+        let tmp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("codex-snap-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: tmp) }
+        let store = CodexAccountSnapshotStore(fileURL: tmp)
+        store.save(ProviderStatus(id: "codex", displayName: "Codex", windows: [],
+                                  lastUpdated: Date(), error: "boom"), forAccount: "e")
+        XCTAssertNil(store.snapshot(forAccount: "e"))   // error status ignored
+        store.save(ProviderStatus(id: "codex", displayName: "Codex", windows: [],
+                                  lastUpdated: Date()), forAccount: "z")
+        XCTAssertNil(store.snapshot(forAccount: "z"))   // empty-windows ignored
+    }
+
     func testAccountActiveSelectionRoundTrip() {
         let previous = CodexAccountStore.activeID()
         defer { CodexAccountStore.setActive(previous) }

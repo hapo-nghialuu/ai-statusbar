@@ -21,10 +21,12 @@ enum CodexAccountStore {
     enum AccountError: LocalizedError {
         case codexNotFound
         case loginFailed
+        case noSystemLogin
         var errorDescription: String? {
             switch self {
             case .codexNotFound: "Không tìm thấy lệnh `codex`. Cài Codex CLI trước."
             case .loginFailed: "Đăng nhập không hoàn tất."
+            case .noSystemLogin: "Chưa có đăng nhập hệ thống (~/.codex) để chuyển thành managed."
             }
         }
     }
@@ -61,7 +63,9 @@ enum CodexAccountStore {
 
     static func setActive(_ id: String) {
         UserDefaults.standard.set(id, forKey: activeKey)
-        NotificationCenter.default.post(name: .birdnionRefresh, object: nil)
+        // QuotaService swaps in this account's cached snapshot (instant), then
+        // refreshes — see its `.birdnionCodexAccountChanged` observer.
+        NotificationCenter.default.post(name: .birdnionCodexAccountChanged, object: nil)
     }
 
     /// The auth.json the provider should read for the active account.
@@ -91,7 +95,41 @@ enum CodexAccountStore {
     static func allAccounts() -> [CodexAccount] {
         let system = CodexAccount(id: "system", email: emailOf(url: systemAuthURL()),
                                   isSystem: true, homePath: nil)
-        return [system] + managedAccounts()
+        return reconcile(system: system, managed: managedAccounts())
+    }
+
+    /// Pure reconciliation: hide a managed account whose email matches an
+    /// already-listed one (e.g. the system login) so the same identity isn't
+    /// shown twice. Accounts with an unknown email are always kept.
+    static func reconcile(system: CodexAccount, managed: [CodexAccount]) -> [CodexAccount] {
+        var seenEmails = Set<String>()
+        if let email = system.email?.lowercased() { seenEmails.insert(email) }
+        let deduped = managed.filter { account in
+            guard let email = account.email?.lowercased() else { return true }
+            return seenEmails.insert(email).inserted
+        }
+        return [system] + deduped
+    }
+
+    /// Copies the current system `~/.codex` login into a new managed home so it
+    /// survives even if the user later re-logs-in the system account. Mirrors
+    /// CodexBar's account promotion. Throws when no system login exists.
+    @discardableResult
+    static func promoteSystem() throws -> CodexAccount {
+        let systemAuth = systemAuthURL()
+        guard FileManager.default.fileExists(atPath: systemAuth.path) else {
+            throw AccountError.noSystemLogin
+        }
+        let id = UUID().uuidString
+        let home = homeDir(forAccount: id)
+        try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
+        let dest = home.appendingPathComponent("auth.json")
+        try? FileManager.default.removeItem(at: dest)
+        try FileManager.default.copyItem(at: systemAuth, to: dest)
+        let account = CodexAccount(id: id, email: emailOf(url: dest),
+                                   isSystem: false, homePath: home.path)
+        persist(managedAccounts() + [account])
+        return account
     }
 
     private static func emailOf(url: URL) -> String? {
