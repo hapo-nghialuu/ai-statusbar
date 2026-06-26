@@ -2,8 +2,8 @@
 
 > Tiny macOS menu-bar app that keeps your AI subscription usage visible. MiniMax, Codex, Claude, Hapo AI Hub, OpenRouter, DeepSeek, z.ai.
 
-[![Latest release](https://img.shields.io/github/v/release/hapo-nghialuu/ai-statusbar?style=flat-square&color=0a0a0c)](https://github.com/hapo-nghialuu/ai-statusbar/releases/latest)
-[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-0a0a0c?style=flat-square)](https://github.com/hapo-nghialuu/ai-statusbar/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/hapo-nghialuu/BirdNion?style=flat-square&color=0a0a0c)](https://github.com/hapo-nghialuu/BirdNion/releases/latest)
+[![macOS 14+](https://img.shields.io/badge/macOS-14%2B-0a0a0c?style=flat-square)](https://github.com/hapo-nghialuu/BirdNion/releases/latest)
 [![Homebrew](https://img.shields.io/badge/brew-hapo--nghialuu%2Ftap%2Fbirdnion-orange?style=flat-square)](https://github.com/hapo-nghialuu/homebrew-tap)
 [![License: MIT](https://img.shields.io/badge/license-MIT-6e5aff?style=flat-square)](LICENSE)
 
@@ -42,15 +42,15 @@ The cask's `postflight` step auto-strips the Gatekeeper quarantine flag (BirdNio
 
 ### GitHub Releases
 Pre-built `.app` bundles are published at
-[hapo-nghialuu/ai-statusbar/releases](https://github.com/hapo-nghialuu/ai-statusbar/releases). Each release includes:
+[hapo-nghialuu/BirdNion/releases](https://github.com/hapo-nghialuu/BirdNion/releases). Each release includes:
 - `BirdNion-<version>.zip` — ad-hoc-signed universal binary
 - SHA256 next to the asset for verification
 - Release notes (changelog-style)
 
 ### Build from source
 ```bash
-git clone https://github.com/hapo-nghialuu/ai-statusbar.git
-cd ai-statusbar
+git clone https://github.com/hapo-nghialuu/BirdNion.git
+cd BirdNion
 open BirdNion.xcodeproj   # or: xcodebuild ...
 ```
 First build pulls the local [CodexBarCore](https://github.com/hapo-nghialuu/CodexBar) SPM at `~/Desktop/CodexBar` — see [docs/build.md](docs/build.md) for the full setup.
