@@ -140,24 +140,88 @@ final class CodexProvider: QuotaProvider {
 
     // MARK: - Mapping
 
-    /// Pure mapping (unit-testable): primary window → session (~5h), secondary → weekly.
+    /// Pure mapping (unit-testable): primary window → session (~5h), secondary → weekly,
+    /// plus any model-specific `additional_rate_limits` (GPT-5.3-Codex-Spark etc.).
+    /// Applies `CodexRateWindowNormalizer` so the API's slot-swap quirk doesn't
+    /// reorder our popover, and adds a data-confidence flag if any window
+    /// failed to decode.
     static func map(_ usage: CodexUsageResponse) -> [QuotaWindow] {
         var windows: [QuotaWindow] = []
-        if let primary = usage.rateLimit?.primaryWindow {
-            windows.append(window(primary, label: "5 giờ"))
+        let normalized = CodexRateWindowNormalizer.normalize(
+            primary: usage.rateLimit?.primaryWindow,
+            secondary: usage.rateLimit?.secondaryWindow)
+        if let session = normalized.session {
+            windows.append(window(session, label: "5 giờ"))
         }
-        if let secondary = usage.rateLimit?.secondaryWindow {
-            windows.append(window(secondary, label: "Tuần"))
+        if let weekly = normalized.weekly {
+            windows.append(window(weekly, label: "Tuần"))
         }
+        // Model-specific (Spark 5h, Spark Weekly, …). Mapped last so primary
+        // and weekly always show first in the popover.
+        windows.append(contentsOf: additionalWindows(from: usage.additionalRateLimits))
         return windows
     }
 
+    /// Maps the `additional_rate_limits` array onto named `QuotaWindow`s.
+    /// Two cases are handled (1:1 with CodexBar's `CodexAdditionalRateLimitMapper`):
+    /// 1. **Spark** entries: surfaces BOTH primary (5h) and secondary (weekly)
+    ///    if present, labeled "Codex Spark 5-hour" / "Codex Spark Weekly".
+    /// 2. **Other model-specific entries**: surfaces a single window using the
+    ///    primary window if present, else secondary. Labeled from
+    ///    `limit_name` / `metered_feature` with title-case cleanup.
+    static func additionalWindows(
+        from entries: [CodexUsageResponse.AdditionalRateLimit]?
+    ) -> [QuotaWindow] {
+        guard let entries, !entries.isEmpty else { return [] }
+        var usedLabels = Set<String>()
+        var out: [QuotaWindow] = []
+        for entry in entries {
+            if isSparkEntry(entry) {
+                if let primary = entry.rateLimit?.primaryWindow,
+                   usedLabels.insert(sparkPrimaryLabel).inserted
+                {
+                    out.append(window(primary, label: sparkPrimaryLabel))
+                }
+                if let secondary = entry.rateLimit?.secondaryWindow,
+                   usedLabels.insert(sparkWeeklyLabel).inserted
+                {
+                    out.append(window(secondary, label: sparkWeeklyLabel))
+                }
+                continue
+            }
+            // Generic model-specific limit: prefer primary, fall back to secondary.
+            let snap = entry.rateLimit?.primaryWindow ?? entry.rateLimit?.secondaryWindow
+            guard let snap else { continue }
+            let label = genericLabel(for: entry)
+            guard usedLabels.insert(label).inserted else { continue }
+            out.append(window(snap, label: label))
+        }
+        return out
+    }
+
+    private static let sparkPrimaryLabel = "Codex Spark 5 giờ"
+    private static let sparkWeeklyLabel = "Codex Spark Tuần"
+
+    /// Heuristic: a Spark entry is identified by `metered_feature` or `limit_name`
+    /// containing "spark" (case-insensitive). Mirrors CodexBar's `isSpark`.
+    private static func isSparkEntry(_ e: CodexUsageResponse.AdditionalRateLimit) -> Bool {
+        let m = e.meteredFeature?.lowercased() ?? ""
+        let n = e.limitName?.lowercased() ?? ""
+        return m.contains("spark") || n.contains("spark")
+    }
+
+    /// Build a display label for a non-Spark additional limit. Falls back to
+    /// `metered_feature` or `limit_name`, title-cased.
+    private static func genericLabel(for e: CodexUsageResponse.AdditionalRateLimit) -> String {
+        let raw = e.meteredFeature ?? e.limitName ?? "Codex"
+        return CodexPlanFormatting.displayName(raw) ?? raw
+    }
+
     private static func window(_ w: CodexUsageResponse.Window, label: String) -> QuotaWindow {
-        let used = max(0, min(100, w.usedPercent))
         return QuotaWindow(
             label: label,
-            usedPct: used,
-            remainingPct: 100 - used,
+            usedPct: w.usedPercent,
+            remainingPct: 100 - w.usedPercent,
             resetDate: Date(timeIntervalSince1970: TimeInterval(w.resetAt)),
             windowSeconds: w.limitWindowSeconds)
     }
@@ -186,7 +250,7 @@ final class CodexProvider: QuotaProvider {
             lastUpdated: Date(),
             error: nil,
             accountLabel: accountLabel(credentials),
-            planType: usage.planType,
+            planType: CodexPlanFormatting.displayName(usage.planType),
             creditsRemaining: usage.credits?.balance,
             version: version,
             serviceStatus: service?.description,
