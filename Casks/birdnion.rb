@@ -24,8 +24,12 @@ cask "birdnion" do
   end
 
   zap trash: [
+    # BirdNion config + tokens
+    "~/.config/birdnion",
+    "~/.birdnion",
+    "~/Library/Preferences/com.local.birdnion.plist",
+    # Legacy (old app name AIStatusbar — kept for migration cleanup)
     "~/Library/Application Support/AIStatusbar",
     "~/Library/Preferences/com.local.aistatusbar.plist",
-    "~/Library/Preferences/com.local.birdnion.plist",
   ]
 end
