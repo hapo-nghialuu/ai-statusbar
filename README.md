@@ -45,6 +45,15 @@ brew install --cask birdnion
 
 The cask's `postflight` step auto-strips the Gatekeeper quarantine flag (BirdNion is ad-hoc signed for free distribution — no Apple Developer account required). If macOS still blocks the first launch, Right-click → Open → Open.
 
+### Update
+```bash
+brew update && brew upgrade --cask birdnion
+```
+`brew update` refreshes the tap so the new version is visible, then `upgrade` installs it. Check the installed version with:
+```bash
+brew info --cask birdnion
+```
+
 ### GitHub Releases
 Pre-built `.app` bundles are published at
 [hapo-nghialuu/BirdNion/releases](https://github.com/hapo-nghialuu/BirdNion/releases). Each release includes:
