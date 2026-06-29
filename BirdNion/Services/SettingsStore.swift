@@ -64,11 +64,23 @@ final class SettingsStore: ObservableObject {
     /// Z.ai / GLM API host region (global vs BigModel CN). `ZaiProvider` reads
     /// the same UserDefaults key directly.
     @AppStorage(ZaiRegion.defaultsKey) var zaiRegion: String = ZaiRegion.global.rawValue
+    @AppStorage(AlibabaRegion.defaultsKey) var alibabaRegion: String = AlibabaRegion.international.rawValue
     /// Which Codex window drives the menu bar percent. `MenuBarIconRenderer`
     /// reads the same UserDefaults key directly.
     @AppStorage(CodexMenuBarMetric.defaultsKey) var codexMenuBarMetric: String = CodexMenuBarMetric.automatic.rawValue
     /// Codex usage source (auto/oauth/cli). `CodexProvider` reads the same key.
     @AppStorage(CodexUsageSource.defaultsKey) var codexUsageSource: String = CodexUsageSource.auto.rawValue
+    /// Antigravity usage source (auto/app/ide/cli/oauth). `AntigravityProvider` reads the same key.
+    @AppStorage(AntigravityUsageSource.defaultsKey) var antigravityUsageSource: String = AntigravityUsageSource.auto.rawValue
+    /// Kilo usage source (auto/api/cli). `KiloProvider` reads the same key.
+    @AppStorage(KiloUsageSource.defaultsKey) var kiloUsageDataSource: String = KiloUsageSource.auto.rawValue
+    /// Selected Kilo quota scope: org id + cached name ("" = personal account).
+    /// `KiloProvider` reads these keys to send `X-KILOCODE-ORGANIZATIONID`.
+    @AppStorage(KiloUsageScope.orgIDKey) var kiloOrgID: String = ""
+    @AppStorage(KiloUsageScope.orgNameKey) var kiloOrgName: String = ""
+    /// How Kiro's quota is shown in the menu bar (credits/percent/used÷total/
+    /// overage). `MenuBarIconRenderer` reads the same key.
+    @AppStorage(KiroMenuBarDisplayMode.defaultsKey) var kiroMenuBarDisplayMode: String = KiroMenuBarDisplayMode.automatic.rawValue
 
     /// OpenAI web extras for Codex (off by default — loads chatgpt.com in a
     /// hidden WebView, heavier on battery/network). `CodexWebDashboard` reads

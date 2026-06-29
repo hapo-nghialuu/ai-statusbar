@@ -55,6 +55,11 @@ struct QuotaOverview: View {
                                !report.isEmpty {
                                 ClaudeUsageChartCard(report: report)
                             }
+                            // Claude Admin API org dashboard (source = .api).
+                            if s.id == "claude", let admin = s.claudeAdminUsage,
+                               !admin.daily.isEmpty {
+                                ClaudeAdminUsageChartCard(snapshot: admin)
+                            }
                         }
                     }
                 }
@@ -259,6 +264,43 @@ struct ProviderLogoMark: View {
         case "claude":
             Image("ClaudeLogo").resizable().interpolation(.high)
                 .foregroundStyle(VocabbyTheme.claude)
+        case "elevenlabs":
+            Image("ElevenLabsLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.elevenLabs)
+        case "deepgram":
+            Image("DeepgramLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.deepgram)
+        case "groq":
+            Image("GroqLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.groq)
+        case "copilot":
+            Image("CopilotLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.copilot)
+        case "kilo":
+            Image("KiloLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.kilo)
+        case "commandcode":
+            Image("CommandCodeLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.commandCode)
+        case "mimo":
+            Image("MiMoLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.mimo)
+        case "alibaba":
+            Image("AlibabaLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.alibaba)
+        case "cursor":
+            Image("CursorLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.cursor)
+        case "gemini":
+            Image("GeminiLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.gemini)
+        case "kiro":
+            Image("KiroLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.kiro)
+        case "opencode":
+            Image("OpenCodeLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.openCode)
+        case "opencodego":
+            Image("OpenCodeGoLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.openCode)
+        case "antigravity":
+            Image("AntigravityLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.antigravity)
+        case "bedrock":
+            Image("BedrockLogo").resizable().interpolation(.high).foregroundStyle(VocabbyTheme.bedrock)
         default:
             Image(systemName: "circle.fill")
                 .foregroundStyle(VocabbyTheme.secondary)
@@ -317,6 +359,37 @@ struct ProviderHeaderCard: View {
 
     private var hasError: Bool { status.error != nil }
 
+    /// Provider detail extras not surfaced as quota windows (Codex populates
+    /// these): credit balance / ∞, CLI version, code-review %, manual-reset
+    /// credits. Rendered as a dim second metadata line so they don't crowd the
+    /// primary one. Empty for providers that leave these fields nil.
+    private var detailParts: [String] {
+        var parts: [String] = []
+        if status.creditsUnlimited {
+            parts.append("∞ credits")
+        } else if status.id == "codex", let c = status.creditsRemaining {
+            parts.append(String(format: "$%.2f credits", c))
+        }
+        if let v = status.version, !v.isEmpty { parts.append(v) }
+        if let cr = status.codexWeb?.codeReviewRemainingPercent {
+            parts.append("Code review \(cr)%")
+        }
+        if let rc = status.resetCreditsAvailable, rc > 0 {
+            parts.append("\(rc) reset credits")
+        }
+        return parts
+    }
+
+    /// Dot color for the provider service-status badge, driven by the
+    /// statuspage severity ("none"/"minor"/"major"/"critical").
+    private var serviceColor: Color {
+        switch status.serviceStatusLevel {
+        case "minor": return VocabbyTheme.yellow
+        case "major", "critical": return VocabbyTheme.critical
+        default: return VocabbyTheme.success
+        }
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
             ProviderLogoMark(id: status.id)
@@ -365,6 +438,21 @@ struct ProviderHeaderCard: View {
                             .foregroundStyle(VocabbyTheme.secondary)
                             .lineLimit(1)
                     }
+                }
+                if !isPlaceholder, let svc = status.serviceStatus, !svc.isEmpty {
+                    HStack(spacing: 4) {
+                        Circle().fill(serviceColor).frame(width: 6, height: 6)
+                        Text(svc)
+                            .font(.system(size: 10))
+                            .foregroundStyle(VocabbyTheme.tertiary)
+                            .lineLimit(1)
+                    }
+                }
+                if !isPlaceholder, !detailParts.isEmpty {
+                    Text(detailParts.joined(separator: " · "))
+                        .font(.system(size: 10).monospacedDigit())
+                        .foregroundStyle(VocabbyTheme.tertiary)
+                        .lineLimit(1)
                 }
             }
             Spacer(minLength: 6)
@@ -711,20 +799,53 @@ enum VocabbyTheme {
     static let border     = Color(red: 0.827, green: 0.827, blue: 0.850)   // #D3D3D9
 
     // Per-provider brand tints for the monochrome template logos.
-    // Values mirror CodexBar's ProviderBranding.color.
+    // Values mirror CodexBar's ProviderBranding.color exactly (see
+    // docs/provider-parity). Exception: ElevenLabs' CodexBar color is near-white
+    // (#EBEBE6) which is invisible on this light popover, so we keep it mono.
+    static let codex      = Color(red: 73 / 255, green: 163 / 255, blue: 176 / 255) // #49A3B0
+    static let minimax    = Color(red: 254 / 255, green: 96 / 255, blue: 60 / 255)  // #FE603C
     static let openRouter = Color(red: 100 / 255, green: 103 / 255, blue: 242 / 255) // #6467F2
     static let deepSeek   = Color(red: 0.32, green: 0.49, blue: 0.94)                // #527DF0
     static let zai        = Color(red: 232 / 255, green: 90 / 255, blue: 106 / 255)  // #E85A6A
     static let claude     = Color(red: 204 / 255, green: 124 / 255, blue: 94 / 255)  // #CC7C5E
+    static let elevenLabs = Color.primary                                            // CodexBar #EBEBE6 invisible on light → mono
+    static let deepgram   = Color(red: 100 / 255, green: 103 / 255, blue: 242 / 255) // #6467F2 (CodexBar)
+    static let groq       = Color(red: 245 / 255, green: 104 / 255, blue: 68 / 255)  // #F56844
+    static let copilot    = Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255)  // #A855F7
+    static let kilo       = Color(red: 242 / 255, green: 112 / 255, blue: 39 / 255)  // #F27027
+    static let commandCode = Color(red: 0, green: 0, blue: 0)                        // #000000 (CodexBar)
+    static let mimo       = Color(red: 255 / 255, green: 105 / 255, blue: 0 / 255)   // #FF6900 (Xiaomi)
+    static let alibaba    = Color(red: 255 / 255, green: 106 / 255, blue: 0 / 255)   // #FF6A00
+    static let cursor     = Color(red: 0, green: 191 / 255, blue: 165 / 255)         // #00BFA5
+    static let gemini     = Color(red: 171 / 255, green: 135 / 255, blue: 234 / 255) // #AB87EA
+    static let kiro       = Color(red: 255 / 255, green: 153 / 255, blue: 0 / 255)   // #FF9900
+    static let openCode   = Color(red: 59 / 255, green: 130 / 255, blue: 246 / 255)  // #3B82F6
+    static let antigravity = Color(red: 96 / 255, green: 186 / 255, blue: 126 / 255) // #60BA7E
+    static let bedrock    = Color(red: 255 / 255, green: 153 / 255, blue: 0 / 255)   // #FF9900 (AWS)
 
     /// Brand tint for a provider id; nil → caller falls back to default styling.
     static func providerTint(_ id: String) -> Color? {
         switch id {
-        case "codex": return blue
+        case "codex": return codex
+        case "minimax": return minimax
         case "openrouter": return openRouter
         case "deepseek": return deepSeek
         case "zai": return zai
         case "claude": return claude
+        case "elevenlabs": return primary
+        case "deepgram": return deepgram
+        case "groq": return groq
+        case "copilot": return copilot
+        case "kilo": return kilo
+        case "commandcode": return commandCode
+        case "mimo": return mimo
+        case "alibaba": return alibaba
+        case "cursor": return cursor
+        case "gemini": return gemini
+        case "kiro": return kiro
+        case "opencode", "opencodego": return openCode
+        case "antigravity": return antigravity
+        case "bedrock": return bedrock
         default: return nil
         }
     }
@@ -767,9 +888,18 @@ struct ClaudeUsageChartCard: View {
     @EnvironmentObject var settings: SettingsStore
 
     let report: ClaudeUsageReport
+    /// The bar the pointer is currently over — drives the hover read-out line
+    /// and the column highlight.
+    @State private var hoveredDay: ClaudeDailyUsage?
 
     private var maxBarUSD: Double {
         max(report.daily.map(\.usd).max() ?? 0, 0.01)
+    }
+
+    /// Day whose per-model breakdown is shown: the hovered bar, else the most
+    /// recent day with activity.
+    private var detailDay: ClaudeDailyUsage? {
+        hoveredDay ?? report.daily.last(where: { $0.tokens > 0 })
     }
 
     private var latestDayTokens: Int {
@@ -804,11 +934,32 @@ struct ClaudeUsageChartCard: View {
             }
             barChart
                 .frame(height: 56)
-            if let model = report.topModel {
-                Text(L10n.f("chart.topModel", settings.appLanguage, model))
-                    .font(.system(size: 10))
-                    .foregroundStyle(VocabbyTheme.secondary)
+            // Per-model breakdown for the focused day (hovered bar, else the
+            // most recent active day) — mirrors CodexBar's day detail list.
+            if let detail = detailDay {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(dayLabel(detail.date)) · \(formatUSD(detail.usd)) · \(formatTokens(detail.tokens))")
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(VocabbyTheme.primary)
+                    ForEach(detail.models) { m in
+                        HStack(spacing: 8) {
+                            Text(m.name)
+                                .font(.system(size: 10))
+                                .foregroundStyle(VocabbyTheme.secondary)
+                                .lineLimit(1)
+                            Spacer(minLength: 8)
+                            Text("\(formatUSD(m.usd)) · \(formatTokensShort(m.tokens))")
+                                .font(.system(size: 10).monospacedDigit())
+                                .foregroundStyle(VocabbyTheme.tertiary)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            // 30-day estimated total + provenance footnote.
+            Text("\(L10n.t("chart.estTotal30", settings.appLanguage)): \(formatUSD(report.last30USD))")
+                .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                .foregroundStyle(VocabbyTheme.primary)
             Text(L10n.t("chart.estimate", settings.appLanguage))
                 .font(.system(size: 9))
                 .foregroundStyle(VocabbyTheme.tertiary)
@@ -847,11 +998,23 @@ struct ClaudeUsageChartCard: View {
                         ? CGFloat(day.usd / maxBarUSD)
                         : 0
                     let barHeight = max(geo.size.height * heightFraction, day.usd > 0 ? 3 : 1)
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(barColor(for: day))
-                        .frame(maxWidth: .infinity, maxHeight: geo.size.height, alignment: .bottom)
-                        .frame(height: barHeight, alignment: .bottom)
-                        .help("\(dayLabel(day.date)): \(formatUSD(day.usd)) · \(formatTokens(day.tokens))")
+                    // Full-height hover column so even tiny bars are easy to
+                    // target; the bar itself sits at the bottom.
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(barColor(for: day))
+                            .frame(height: barHeight)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(hoveredDay?.id == day.id
+                                ? VocabbyTheme.selectedSurface.opacity(0.6) : Color.clear)
+                    .contentShape(Rectangle())
+                    .onHover { inside in
+                        if inside { hoveredDay = day }
+                        else if hoveredDay?.id == day.id { hoveredDay = nil }
+                    }
+                    .help("\(dayLabel(day.date)): \(formatUSD(day.usd)) · \(formatTokens(day.tokens))")
                 }
             }
         }
@@ -878,6 +1041,105 @@ struct ClaudeUsageChartCard: View {
             return String(format: "$%.0f", amount)
         }
         return String(format: "$%.2f", amount)
+    }
+
+    private func formatTokens(_ n: Int) -> String {
+        if n >= 1_000_000 { return String(format: "%.1fM", Double(n) / 1_000_000) + " tokens" }
+        if n >= 1_000 { return String(format: "%.1fK", Double(n) / 1_000) + " tokens" }
+        return "\(n) tokens"
+    }
+
+    /// Compact token count without the " tokens" suffix, for the dense per-model
+    /// breakdown rows (e.g. "628M", "9.1M", "29M").
+    private func formatTokensShort(_ n: Int) -> String {
+        let m = Double(n) / 1_000_000
+        if n >= 10_000_000 { return String(format: "%.0fM", m) }
+        if n >= 1_000_000 { return String(format: "%.1fM", m) }
+        if n >= 1_000 { return String(format: "%.0fK", Double(n) / 1_000) }
+        return "\(n)"
+    }
+}
+
+// MARK: - Claude Admin usage chart
+
+/// 30-day org dashboard card for the Claude Admin API source. Mirrors
+/// `ClaudeUsageChartCard` but the data comes from `ClaudeAdminAPIUsageSnapshot`
+/// (real billed cost from Anthropic's org Usage & Cost API, not a local
+/// estimate) — so no "≈ estimate" footnote. Shows 30-day + latest-day cost +
+/// tokens, a per-day cost bar series, and the top model + top cost item.
+struct ClaudeAdminUsageChartCard: View {
+    @EnvironmentObject var settings: SettingsStore
+
+    let snapshot: ClaudeAdminAPIUsageSnapshot
+
+    private var vi: Bool { L10n.languageCode(settings.appLanguage) == "vi" }
+    private var maxBarUSD: Double { max(snapshot.daily.map(\.costUSD).max() ?? 0, 0.01) }
+
+    var body: some View {
+        let last30 = snapshot.last30Days
+        let latest = snapshot.latestDay
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(vi ? "Admin API · Tổ chức (30 ngày)" : "Admin API · Org (30 days)")
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(VocabbyTheme.secondary)
+                .tracking(0.3)
+            HStack(alignment: .top, spacing: 16) {
+                column(label: vi ? "30 ngày" : "30 days", amount: last30.costUSD, tokens: last30.totalTokens)
+                Spacer(minLength: 8)
+                column(label: vi ? "Mới nhất" : "Latest", amount: latest.costUSD,
+                       tokens: latest.totalTokens, alignTrailing: true)
+            }
+            barChart.frame(height: 56)
+            if let model = snapshot.topModels.first {
+                Text((vi ? "Model nhiều nhất: " : "Top model: ") + model.name)
+                    .font(.system(size: 10))
+                    .foregroundStyle(VocabbyTheme.secondary)
+            }
+            if let item = snapshot.topCostItems.first {
+                Text((vi ? "Chi nhiều nhất: " : "Top cost: ") + "\(item.name) · \(formatUSD(item.costUSD))")
+                    .font(.system(size: 10))
+                    .foregroundStyle(VocabbyTheme.tertiary)
+            }
+        }
+        .vocabbyCard()
+    }
+
+    @ViewBuilder
+    private func column(label: String, amount: Double, tokens: Int,
+                        alignTrailing: Bool = false) -> some View {
+        VStack(alignment: alignTrailing ? .trailing : .leading, spacing: 2) {
+            Text(label)
+                .font(.system(size: 9, weight: .semibold))
+                .foregroundStyle(VocabbyTheme.secondary)
+                .tracking(0.3)
+            Text(formatUSD(amount))
+                .font(.system(size: 16, weight: .semibold).monospacedDigit())
+                .foregroundStyle(VocabbyTheme.primary)
+            Text(formatTokens(tokens))
+                .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(VocabbyTheme.tertiary)
+        }
+    }
+
+    private var barChart: some View {
+        GeometryReader { geo in
+            HStack(alignment: .bottom, spacing: 2) {
+                ForEach(snapshot.daily) { day in
+                    let fraction = day.costUSD > 0 ? CGFloat(day.costUSD / maxBarUSD) : 0
+                    let barHeight = max(geo.size.height * fraction, day.costUSD > 0 ? 3 : 1)
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(day.id == snapshot.daily.last?.id ? VocabbyTheme.blue
+                              : (day.costUSD == 0 ? VocabbyTheme.track.opacity(0.6) : VocabbyTheme.yellow))
+                        .frame(maxWidth: .infinity, maxHeight: geo.size.height, alignment: .bottom)
+                        .frame(height: barHeight, alignment: .bottom)
+                        .help("\(day.day): \(formatUSD(day.costUSD)) · \(formatTokens(day.totalTokens))")
+                }
+            }
+        }
+    }
+
+    private func formatUSD(_ amount: Double) -> String {
+        amount >= 1000 ? String(format: "$%.0f", amount) : String(format: "$%.2f", amount)
     }
 
     private func formatTokens(_ n: Int) -> String {

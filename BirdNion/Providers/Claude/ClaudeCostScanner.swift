@@ -18,10 +18,20 @@ struct ClaudeCostSummary: Equatable {
 /// One day's worth of Claude usage rolled up across every session log that
 /// ran in that calendar day (local timezone). Tokens are exact sums of
 /// `message.usage`; USD is the price-table estimate per-model.
+/// One model's slice of a single day — powers the hover breakdown list.
+struct ClaudeDailyModel: Equatable, Identifiable {
+    let name: String
+    let usd: Double
+    let tokens: Int
+    var id: String { name }
+}
+
 struct ClaudeDailyUsage: Equatable, Identifiable {
     let date: Date   // startOfDay in local tz
     let usd: Double
     let tokens: Int
+    /// Per-model split for this day, highest token count first (top 5).
+    let models: [ClaudeDailyModel]
     var id: Date { date }
 }
 
@@ -60,23 +70,28 @@ struct ClaudeModelPrice {
     let cacheReadPerM: Double
     let outputPerM: Double
 
-    /// Best-effort table for the model IDs Claude Code reports. Unknown
-    /// models fall back to Sonnet pricing (most common mid-tier).
-    static func price(for model: String) -> ClaudeModelPrice {
+    /// Per-model prices mirroring CodexBar's `CostUsagePricing` (opus-4-x,
+    /// sonnet-4-x, haiku-4-x). Returns nil for non-Claude models (e.g. MiniMax
+    /// routed through Claude Code) so their tokens are still counted but cost
+    /// $0 — exactly how CodexBar's chart behaves.
+    static func price(for model: String) -> ClaudeModelPrice? {
         let m = model.lowercased()
-        // Opus 4.x family (claude-opus-4-1, claude-opus-4, claude-opus-4-8)
+        // Opus 4.x — $5 / $6.25 / $0.50 / $25 per-M (NOT the old Opus-3 $15/$75).
         if m.contains("opus") {
-            return ClaudeModelPrice(inputPerM: 15.0, cacheWritePerM: 18.75,
-                                    cacheReadPerM: 1.50, outputPerM: 75.0)
+            return ClaudeModelPrice(inputPerM: 5.0, cacheWritePerM: 6.25,
+                                    cacheReadPerM: 0.50, outputPerM: 25.0)
         }
-        // Haiku 4.x family
+        // Haiku 4.x — $1 / $1.25 / $0.10 / $5 per-M.
         if m.contains("haiku") {
-            return ClaudeModelPrice(inputPerM: 0.80, cacheWritePerM: 1.00,
-                                    cacheReadPerM: 0.08, outputPerM: 4.0)
+            return ClaudeModelPrice(inputPerM: 1.0, cacheWritePerM: 1.25,
+                                    cacheReadPerM: 0.10, outputPerM: 5.0)
         }
-        // Sonnet 4.x (default fallback) + 3.x
-        return ClaudeModelPrice(inputPerM: 3.0, cacheWritePerM: 3.75,
-                                cacheReadPerM: 0.30, outputPerM: 15.0)
+        // Sonnet 4.x / 3.x — $3 / $3.75 / $0.30 / $15 per-M.
+        if m.contains("sonnet") {
+            return ClaudeModelPrice(inputPerM: 3.0, cacheWritePerM: 3.75,
+                                    cacheReadPerM: 0.30, outputPerM: 15.0)
+        }
+        return nil  // non-Claude model — tokens counted, cost $0
     }
 }
 
@@ -117,11 +132,36 @@ enum ClaudeCostScanner {
         URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".claude/projects")
     }
 
-    /// Cached, off-main scan. Returns nil only if the projects dir is unreadable.
-    static func summary(projectsDir: URL = defaultProjectsDir(), now: Date = Date()) async -> ClaudeCostSummary? {
+    /// All project roots to scan (CodexBar parity). When `CLAUDE_CONFIG_DIR` is
+    /// set it wins (comma-separated, each entry's `projects/` subdir); otherwise
+    /// BOTH `~/.config/claude/projects` and `~/.claude/projects` are scanned —
+    /// fixing the "reports 0 tokens" case when sessions live under `.config`.
+    static func defaultProjectsRoots(
+        environment: [String: String] = ProcessInfo.processInfo.environment) -> [URL] {
+        if let raw = environment["CLAUDE_CONFIG_DIR"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !raw.isEmpty {
+            var roots: [URL] = []
+            for part in raw.split(separator: ",") {
+                let p = String(part).trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !p.isEmpty else { continue }
+                let url = URL(fileURLWithPath: p)
+                roots.append(url.lastPathComponent == "projects"
+                             ? url : url.appendingPathComponent("projects", isDirectory: true))
+            }
+            if !roots.isEmpty { return roots }
+        }
+        let home = URL(fileURLWithPath: environment["HOME"] ?? NSHomeDirectory())
+        return [
+            home.appendingPathComponent(".config/claude/projects", isDirectory: true),
+            home.appendingPathComponent(".claude/projects", isDirectory: true),
+        ]
+    }
+
+    /// Cached, off-main scan. Returns nil only if no projects root is readable.
+    static func summary(roots: [URL] = defaultProjectsRoots(), now: Date = Date()) async -> ClaudeCostSummary? {
         if let cached = await Cache.shared.valid(now: now, ttl: cacheTTL) { return cached }
         let value = await Task.detached(priority: .utility) {
-            scan(projectsDir: projectsDir, now: now)
+            scan(roots: roots, now: now)
         }.value
         if let value { await Cache.shared.store(value, at: now) }
         return value
@@ -131,13 +171,13 @@ enum ClaudeCostScanner {
     /// top model). Used by the popover chart. The result is cached under the
     /// same key so a call to `summary` followed by `usageReport` only does
     /// the file walk once.
-    static func usageReport(projectsDir: URL = defaultProjectsDir(),
+    static func usageReport(roots: [URL] = defaultProjectsRoots(),
                             now: Date = Date()) async -> ClaudeUsageReport? {
         if let cached = await Cache.shared.validFullReport(now: now, ttl: cacheTTL) {
             return cached
         }
         let value = await Task.detached(priority: .utility) {
-            scanFull(projectsDir: projectsDir, now: now)
+            scanFull(roots: roots, now: now)
         }.value
         if let value { await Cache.shared.storeFull(value, at: now) }
         return value
@@ -145,24 +185,49 @@ enum ClaudeCostScanner {
 
     // MARK: - Scanning
 
-    static func scan(projectsDir: URL, now: Date) -> ClaudeCostSummary? {
-        scanFull(projectsDir: projectsDir, now: now)?.asSummary
+    static func scan(roots: [URL], now: Date) -> ClaudeCostSummary? {
+        scanFull(roots: roots, now: now)?.asSummary
     }
 
     /// Walks every session jsonl once and produces both the aggregate totals
     /// and the per-day bucket array. Buckets are keyed by startOfDay in the
     /// local calendar so the chart bars line up with "today" / "yesterday"
     /// labels the UI uses.
-    static func scanFull(projectsDir: URL, now: Date) -> ClaudeUsageReport? {
+    static func scanFull(roots: [URL], now: Date) -> ClaudeUsageReport? {
         let fm = FileManager.default
-        guard let enumerator = fm.enumerator(
-            at: projectsDir,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]) else { return nil }
-
         let calendar = Calendar.current
         let startOfToday = calendar.startOfDay(for: now)
         let cutoff = now.addingTimeInterval(-30 * 86_400)
+
+        // Collect entries across every root, then dedup by messageId:requestId
+        // (the same assistant message is logged in both the parent session and
+        // any subagent/sidechain file — summing twice over-counts). Keep-last
+        // wins; entries without IDs are kept individually. Mirrors CodexBar.
+        var keyed: [String: DayEntry] = [:]
+        var unkeyed: [DayEntry] = []
+        var anyRoot = false
+
+        for root in roots {
+            guard let enumerator = fm.enumerator(
+                at: root, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else { continue }
+            anyRoot = true
+            var files: [URL] = []
+            for case let url as URL in enumerator {
+                guard url.pathExtension == "jsonl" else { continue }
+                let mtime = (try? url.resourceValues(forKeys: [.contentModificationDateKey])
+                    .contentModificationDate) ?? .distantPast
+                // Fast-path skip: files untouched in 30 days hold no usable line.
+                guard mtime >= cutoff else { continue }
+                files.append(url)
+            }
+            // Sorted so keep-last dedup is deterministic across runs.
+            for url in files.sorted(by: { $0.path < $1.path }) {
+                for entry in scanFileWithDay(url, cutoff: cutoff, calendar: calendar) {
+                    if let key = entry.key { keyed[key] = entry } else { unkeyed.append(entry) }
+                }
+            }
+        }
+        guard anyRoot else { return nil }
 
         var todayUSD = 0.0, todayTokens = 0
         var monthUSD = 0.0, monthTokens = 0
@@ -171,29 +236,24 @@ enum ClaudeCostScanner {
         // Model vote counts — most-used model across the 30-day window.
         var modelVotes: [String: Int] = [:]
 
-        for case let url as URL in enumerator {
-            guard url.pathExtension == "jsonl" else { continue }
-            let mtime = (try? url.resourceValues(forKeys: [.contentModificationDateKey])
-                .contentModificationDate) ?? .distantPast
-            // Fast-path skip: if the file hasn't been touched in 30 days, no
-            // individual line inside could have a usable timestamp either.
-            guard mtime >= cutoff else { continue }
+        for entry in keyed.values + unkeyed {
+            let entryDate = entry.date
+            guard entryDate >= cutoff else { continue }
+            let existing = buckets[entryDate] ?? DailyAccumulator(date: entryDate)
+            existing.usd += entry.usd
+            existing.tokens += entry.tokens
+            var ma = existing.models[entry.model] ?? ModelAccum()
+            ma.usd += entry.usd
+            ma.tokens += entry.tokens
+            existing.models[entry.model] = ma
+            buckets[entryDate] = existing
+            modelVotes[entry.model, default: 0] += entry.tokens
 
-            for entry in scanFileWithDay(url, cutoff: cutoff, calendar: calendar) {
-                let entryDate = entry.date
-                guard entryDate >= cutoff else { continue }
-                let existing = buckets[entryDate] ?? DailyAccumulator(date: entryDate)
-                existing.usd += entry.usd
-                existing.tokens += entry.tokens
-                buckets[entryDate] = existing
-                modelVotes[entry.model, default: 0] += entry.tokens
-
-                monthUSD += entry.usd
-                monthTokens += entry.tokens
-                if entryDate >= startOfToday {
-                    todayUSD += entry.usd
-                    todayTokens += entry.tokens
-                }
+            monthUSD += entry.usd
+            monthTokens += entry.tokens
+            if entryDate >= startOfToday {
+                todayUSD += entry.usd
+                todayTokens += entry.tokens
             }
         }
 
@@ -210,11 +270,15 @@ enum ClaudeCostScanner {
             daily: daily, topModel: topModel)
     }
 
+    /// One model's running totals within a day.
+    private struct ModelAccum { var usd: Double = 0; var tokens: Int = 0 }
+
     /// In-place accumulator so we don't box a struct on every line.
     private final class DailyAccumulator {
         let date: Date
         var usd: Double = 0
         var tokens: Int = 0
+        var models: [String: ModelAccum] = [:]
         init(date: Date) { self.date = date }
     }
 
@@ -231,7 +295,15 @@ enum ClaudeCostScanner {
             let entry = buckets[cursor]
             let usd = entry?.usd ?? 0
             let tokens = entry?.tokens ?? 0
-            result.append(ClaudeDailyUsage(date: cursor, usd: usd, tokens: tokens))
+            let models: [ClaudeDailyModel] = (entry?.models ?? [:])
+                // Drop the noisy "<synthetic>" placeholder and zero-token models
+                // so the breakdown only lists real, non-empty usage.
+                .filter { $0.key != "<synthetic>" && $0.value.tokens > 0 }
+                .map { ClaudeDailyModel(name: $0.key, usd: $0.value.usd, tokens: $0.value.tokens) }
+                .sorted { $0.tokens > $1.tokens }
+                .prefix(5)
+                .map { $0 }
+            result.append(ClaudeDailyUsage(date: cursor, usd: usd, tokens: tokens, models: models))
             cursor = cursor.addingTimeInterval(-86_400)
         }
         return result.reversed()
@@ -298,24 +370,42 @@ enum ClaudeCostScanner {
         let output = usage["output_tokens"] as? Int ?? 0
         let rawModel = (message["model"] as? String) ?? "claude-sonnet"
 
-        // Skip the noisy <synthetic> model placeholder that Claude Code
-        // uses for some internal assistant turns.
-        let priceModel = rawModel == "<synthetic>" ? "claude-sonnet" : rawModel
-        let price = ClaudeModelPrice.price(for: priceModel)
-        let fresh = max(0, input - cacheRead)
-        let usdLine = (Double(fresh) * price.inputPerM
+        // Skip Vertex AI usage (separately billed): "_vrtx_" id prefix or a
+        // model with an "@version" separator. Mirrors CodexBar's filter.
+        let messageId = message["id"] as? String
+        let requestId = obj["requestId"] as? String
+        if messageId?.contains("_vrtx_") == true || requestId?.contains("_vrtx_") == true
+            || (rawModel.hasPrefix("claude-") && rawModel.contains("@")) { return }
+
+        // Cost only for recognised Claude models; unknown models (e.g. MiniMax
+        // routed via Claude Code) count tokens but cost $0 — matching CodexBar.
+        // Anthropic's `input_tokens` is already the fresh (uncached) count, so
+        // it is priced directly (no cacheRead subtraction).
+        let usdLine: Double
+        if let price = ClaudeModelPrice.price(for: rawModel) {
+            usdLine = (Double(input) * price.inputPerM
                       + Double(cacheCreation) * price.cacheWritePerM
                       + Double(cacheRead) * price.cacheReadPerM
                       + Double(output) * price.outputPerM) / 1_000_000
+        } else {
+            usdLine = 0
+        }
 
         // Bucket by the line's actual timestamp so a long-running session
         // spread across multiple days lands tokens on the correct bars.
         let timestampStr = obj["timestamp"] as? String
         let parsedDate = parseISODate(timestampStr) ?? Date()
         let day = calendar.startOfDay(for: parsedDate)
+        // Dedup key: the same assistant message logged in multiple files shares
+        // messageId + requestId. nil when either is absent (then it's counted
+        // individually).
+        let key: String? = (messageId != nil && requestId != nil) ? "\(messageId!):\(requestId!)" : nil
+        // Total tokens INCLUDE cache (read + creation) — they dominate Claude
+        // usage (~99%); excluding them under-counts ~70× and lets a non-Claude
+        // model win the "top model" vote. Mirrors CodexBar's token total.
         entries.append(DayEntry(date: day, usd: usdLine,
-                                tokens: input + output,
-                                model: priceModel))
+                                tokens: input + cacheCreation + cacheRead + output,
+                                model: rawModel, key: key))
     }
 
     /// One assistant turn worth of per-day accounting. Model is tracked so
@@ -325,6 +415,8 @@ enum ClaudeCostScanner {
         let usd: Double
         let tokens: Int
         let model: String
+        /// `messageId:requestId` for cross-file dedup; nil when unavailable.
+        let key: String?
     }
 
     /// Legacy file scan (kept for `summary()` callers that don't need

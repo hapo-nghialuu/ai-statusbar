@@ -267,6 +267,8 @@ final class CodexProvider: QuotaProvider {
             planType: CodexPlanFormatting.displayName(usage.planType),
             // Web dashboard fills credits only when OAuth doesn't provide them.
             creditsRemaining: usage.credits?.balance ?? web?.creditsRemaining,
+            // OAuth `unlimited` flag → UI renders "∞" instead of a balance.
+            creditsUnlimited: usage.credits?.unlimited ?? false,
             version: version,
             serviceStatus: service?.description,
             serviceStatusLevel: service?.indicator,

@@ -68,10 +68,22 @@ struct CodexUsageResponse: Decodable, Equatable {
     /// so decode leniently (matches CodexBar's `CreditDetails`).
     struct Credits: Decodable, Equatable {
         let balance: Double?
+        /// Whether the account has any credits at all (`has_credits`).
+        let hasCredits: Bool
+        /// Whether credits are unlimited — the UI then shows "∞" not a number.
+        let unlimited: Bool
 
-        enum CodingKeys: String, CodingKey { case balance }
+        enum CodingKeys: String, CodingKey {
+            case balance
+            case hasCredits = "has_credits"
+            case unlimited
+        }
 
-        init(balance: Double?) { self.balance = balance }
+        init(balance: Double?, hasCredits: Bool = false, unlimited: Bool = false) {
+            self.balance = balance
+            self.hasCredits = hasCredits
+            self.unlimited = unlimited
+        }
 
         init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -82,6 +94,8 @@ struct CodexUsageResponse: Decodable, Equatable {
             } else {
                 self.balance = nil
             }
+            self.hasCredits = (try? c.decode(Bool.self, forKey: .hasCredits)) ?? false
+            self.unlimited = (try? c.decode(Bool.self, forKey: .unlimited)) ?? false
         }
     }
 
@@ -192,17 +206,97 @@ enum CodexUsageError: Error, Equatable {
     case serverError(Int)
 }
 
+// MARK: - Config TOML helper (shared by UsageAPI + ResetCreditsAPI)
+
+/// Reads `chatgpt_base_url` from `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`).
+/// Mirrors CodexBar's `CodexOAuthUsageFetcher.resolveChatGPTBaseURL` logic.
+enum CodexConfigTOML {
+    static let defaultBase = "https://chatgpt.com"
+
+    /// Returns the normalized base URL (no trailing slash, `/backend-api` appended
+    /// for the default chatgpt.com host if absent).
+    static func resolvedBaseURL(env: [String: String] = ProcessInfo.processInfo.environment) -> String {
+        let raw = loadedBaseURL(env: env) ?? defaultBase
+        return normalize(raw)
+    }
+
+    // MARK: Internal (internal for testing)
+
+    static func loadedBaseURL(env: [String: String]) -> String? {
+        guard let contents = loadConfig(env: env) else { return nil }
+        return parse(contents)
+    }
+
+    static func parse(_ contents: String) -> String? {
+        for rawLine in contents.split(whereSeparator: \.isNewline) {
+            // Strip inline comments
+            let stripped = rawLine.split(separator: "#", maxSplits: 1,
+                                         omittingEmptySubsequences: true).first ?? rawLine[...]
+            let trimmed = stripped.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let parts = trimmed.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: true)
+            guard parts.count == 2 else { continue }
+            let key = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard key == "chatgpt_base_url" else { continue }
+            var value = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            if (value.hasPrefix("\"") && value.hasSuffix("\""))
+                || (value.hasPrefix("'") && value.hasSuffix("'"))
+            {
+                value = String(value.dropFirst().dropLast())
+            }
+            let result = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return result.isEmpty ? nil : result
+        }
+        return nil
+    }
+
+    static func normalize(_ value: String) -> String {
+        var s = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { s = defaultBase }
+        while s.hasSuffix("/") { s.removeLast() }
+        // For the standard hosts, ensure /backend-api is present (matches CodexBar behaviour).
+        if (s.hasPrefix("https://chatgpt.com") || s.hasPrefix("https://chat.openai.com")),
+           !s.contains("/backend-api")
+        {
+            s += "/backend-api"
+        }
+        return s
+    }
+
+    private static func loadConfig(env: [String: String]) -> String? {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let codexHome = env["CODEX_HOME"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let root: URL = (codexHome?.isEmpty == false)
+            ? URL(fileURLWithPath: codexHome!)
+            : home.appendingPathComponent(".codex")
+        let url = root.appendingPathComponent("config.toml")
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+}
+
+// MARK: -
+
 /// Fetches Codex usage over the ChatGPT backend API using an OAuth access token.
 /// Mirrors CodexBar's `CodexOAuthUsageFetcher.fetchUsage` but over `URLSession`.
 enum CodexUsageAPI {
+    /// Hardcoded fallback kept for legacy callers / tests; production callers use
+    /// `resolvedUsageURL()` which honours `chatgpt_base_url` from config.toml.
     static let usageURL = URL(string: "https://chatgpt.com/backend-api/wham/usage")!
+
+    /// Resolves the usage URL respecting `chatgpt_base_url` in `~/.codex/config.toml`
+    /// (or `$CODEX_HOME/config.toml`). Falls back to `usageURL`.
+    static func resolvedUsageURL(env: [String: String] = ProcessInfo.processInfo.environment) -> URL {
+        let base = CodexConfigTOML.resolvedBaseURL(env: env)
+        let path = base.contains("/backend-api") ? "/wham/usage" : "/backend-api/wham/usage"
+        return URL(string: base + path) ?? usageURL
+    }
 
     static func fetchUsage(
         accessToken: String,
         accountId: String?,
         session: URLSession = .shared) async throws -> CodexUsageResponse
     {
-        var request = URLRequest(url: usageURL)
+        var request = URLRequest(url: resolvedUsageURL())
         request.httpMethod = "GET"
         request.timeoutInterval = 30
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")

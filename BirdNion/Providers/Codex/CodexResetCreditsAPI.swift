@@ -32,7 +32,17 @@ enum CodexResetCreditsError: Error, Equatable {
 /// `URLSession` (no internal ProviderHTTPTransport). All fields are
 /// optional so a partial payload still decodes.
 enum CodexResetCreditsAPI {
+    /// Hardcoded fallback; production path uses `resolvedURL()`.
     static let url = URL(string: "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits")!
+
+    /// Resolves the reset-credits URL honouring `chatgpt_base_url` from config.toml.
+    static func resolvedURL(env: [String: String] = ProcessInfo.processInfo.environment) -> URL {
+        let base = CodexConfigTOML.resolvedBaseURL(env: env)
+        let path = base.contains("/backend-api")
+            ? "/wham/rate-limit-reset-credits"
+            : "/backend-api/wham/rate-limit-reset-credits"
+        return URL(string: base + path) ?? url
+    }
 
     static func fetch(
         accessToken: String,
@@ -40,7 +50,7 @@ enum CodexResetCreditsAPI {
         session: URLSession = .shared,
         now: Date = Date()) async throws -> CodexRateLimitResetCreditsSnapshot
     {
-        var req = URLRequest(url: url)
+        var req = URLRequest(url: resolvedURL())
         req.httpMethod = "GET"
         req.timeoutInterval = 10
         req.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")

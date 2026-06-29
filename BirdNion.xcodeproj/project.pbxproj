@@ -23,10 +23,41 @@
 		DDDD00E2000000000000B0E0 /* DeepSeekProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F2000000000000F0E0 /* DeepSeekProvider.swift */; };
 		DDDD00E3000000000000B0E0 /* ZaiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F3000000000000F0E0 /* ZaiProvider.swift */; };
 		DDDD00E4000000000000B0E0 /* ClaudeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD00F4000000000000F0E0 /* ClaudeProvider.swift */; };
+		ELP00001000000000000B01 /* ElevenLabsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ELP00002000000000000F01 /* ElevenLabsProvider.swift */; };
+		DGP00001000000000000B01 /* DeepgramProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DGP00002000000000000F01 /* DeepgramProvider.swift */; };
+		GRP00001000000000000B01 /* GroqProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRP00002000000000000F01 /* GroqProvider.swift */; };
+		CPL00001000000000000B01 /* CopilotProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPL00002000000000000F01 /* CopilotProvider.swift */; };
+		CPL00003000000000000B01 /* CopilotOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = CPL00004000000000000F01 /* CopilotOAuth.swift */; };
+		KIL00001000000000000B01 /* KiloProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = KIL00002000000000000F01 /* KiloProvider.swift */; };
+		KIL00003000000000000B01 /* KiloUsageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = KIL00004000000000000F01 /* KiloUsageSource.swift */; };
+		KIL00005000000000000B01 /* KiloOrganization.swift in Sources */ = {isa = PBXBuildFile; fileRef = KIL00006000000000000F01 /* KiloOrganization.swift */; };
+		PCR00001000000000000B01 /* ProviderCookieReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = PCR00002000000000000F01 /* ProviderCookieReader.swift */; };
+		CMC00001000000000000B01 /* CommandCodeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMC00002000000000000F01 /* CommandCodeProvider.swift */; };
+		MIM00001000000000000B01 /* MiMoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIM00002000000000000F01 /* MiMoProvider.swift */; };
+		CUR00001000000000000B01 /* CursorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUR00002000000000000F01 /* CursorProvider.swift */; };
+		ALB00001000000000000B01 /* AlibabaProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALB00002000000000000F01 /* AlibabaProvider.swift */; };
+		OPC00001000000000000B01 /* OpenCodeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = OPC00002000000000000F01 /* OpenCodeProvider.swift */; };
+		OCG00001000000000000B01 /* OpenCodeGoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = OCG00002000000000000F01 /* OpenCodeGoProvider.swift */; };
+		GEM00001000000000000B01 /* GeminiProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = GEM00002000000000000F01 /* GeminiProvider.swift */; };
+		KRO00001000000000000B01 /* KiroProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = KRO00002000000000000F01 /* KiroProvider.swift */; };
+		ANT00001000000000000B01 /* AntigravityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANT00002000000000000F01 /* AntigravityProvider.swift */; };
+		ANT00003000000000000B01 /* AntigravityOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANT00004000000000000F01 /* AntigravityOAuth.swift */; };
+		BED00001000000000000B01 /* BedrockProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BED00002000000000000F01 /* BedrockProvider.swift */; };
 		PVD0001000000000000B001 /* ClaudeCLIVersionDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = PVD0002000000000000F002 /* ClaudeCLIVersionDetector.swift */; };
 		CC0002000000000000B001 /* ClaudeCostScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0001000000000000F001 /* ClaudeCostScanner.swift */; };
+		CLM00001000000000000B01 /* ClaudeUsageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLM00002000000000000F01 /* ClaudeUsageModels.swift */; };
+		CLP00001000000000000B01 /* ClaudeSourcePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLP00002000000000000F01 /* ClaudeSourcePlanner.swift */; };
+		CLU00001000000000000B01 /* ClaudeUsageOrchestrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLU00002000000000000F01 /* ClaudeUsageOrchestrator.swift */; };
+		CLO00001000000000000B01 /* ClaudeOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLO00002000000000000F01 /* ClaudeOAuth.swift */; };
+		CLA00001000000000000B01 /* ClaudeAdminAPIUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLA00002000000000000F01 /* ClaudeAdminAPIUsage.swift */; };
+		CLT00001000000000000B01 /* ClaudeTokenAccounts.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLT00002000000000000F01 /* ClaudeTokenAccounts.swift */; };
+		CLC00001000000000000B01 /* ClaudeCLISession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLC00002000000000000F01 /* ClaudeCLISession.swift */; };
+		CLG00001000000000000B01 /* ClaudeCLIRateLimitGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLG00002000000000000F01 /* ClaudeCLIRateLimitGate.swift */; };
+		CLW00001000000000000B01 /* ClaudeWebCookieReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLW00002000000000000F01 /* ClaudeWebCookieReader.swift */; };
+		CWF00001000000000000B01 /* ClaudeWebAPIFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = CWF00002000000000000F01 /* ClaudeWebAPIFetcher.swift */; };
 		MV0001000000000000B001 /* MenuBarVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = MV0002000000000000F001 /* MenuBarVisibility.swift */; };
 		LSP0003000000000000BF001 /* CodexBarCore in Frameworks */ = {isa = PBXBuildFile; productRef = LSP0002000000000000PD001 /* CodexBarCore */; };
+		SCK00003000000000000BF02 /* SweetCookieKit in Frameworks */ = {isa = PBXBuildFile; productRef = SCK00002000000000000PD02 /* SweetCookieKit */; };
 		DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000C000000000000F006 /* HapoHubConfig.swift */; };
 		DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD000E000000000000F007 /* HapoHubProvider.swift */; };
 		DDDD000F0000000000B008 /* MockHapoHubProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDD0010000000000000F008 /* MockHapoHubProvider.swift */; };
@@ -68,6 +99,8 @@
 		C0DE0007000000000000B004 /* CodexProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE0008000000000000F004 /* CodexProviderTests.swift */; };
 		CCST0001000000000000B001 /* CodexCostScannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCST0002000000000000F001 /* CodexCostScannerTests.swift */; };
 		CWDT0001000000000000B001 /* CodexWebDashboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CWDT0002000000000000F001 /* CodexWebDashboardTests.swift */; };
+		CLNT0001000000000000B001 /* ClaudeNativeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLNT0002000000000000F001 /* ClaudeNativeTests.swift */; };
+		NPT00001000000000000B01 /* NewProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = NPT00002000000000000F01 /* NewProviderTests.swift */; };
 
 		EEEE0004000000000000B001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EEEE0003000000000000F001 /* Assets.xcassets */; };
 		FFFF0001000000000000B001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFFF0002000000000000F001 /* AppDelegate.swift */; };
@@ -91,6 +124,16 @@
 		AAAA0004000000000000F003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BBBB0002000000000000F001 /* ProviderStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderStatus.swift; sourceTree = "<group>"; };
 		PCST0002000000000000F001 /* ProviderCostSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Models/ProviderCostSnapshot.swift; sourceTree = "<group>"; };
+		CLM00002000000000000F01 /* ClaudeUsageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/Core/ClaudeUsageModels.swift; sourceTree = "<group>"; };
+		CLP00002000000000000F01 /* ClaudeSourcePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/Core/ClaudeSourcePlanner.swift; sourceTree = "<group>"; };
+		CLU00002000000000000F01 /* ClaudeUsageOrchestrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/Core/ClaudeUsageOrchestrator.swift; sourceTree = "<group>"; };
+		CLO00002000000000000F01 /* ClaudeOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/OAuth/ClaudeOAuth.swift; sourceTree = "<group>"; };
+		CLA00002000000000000F01 /* ClaudeAdminAPIUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/Admin/ClaudeAdminAPIUsage.swift; sourceTree = "<group>"; };
+		CLT00002000000000000F01 /* ClaudeTokenAccounts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/Accounts/ClaudeTokenAccounts.swift; sourceTree = "<group>"; };
+		CLC00002000000000000F01 /* ClaudeCLISession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/CLI/ClaudeCLISession.swift; sourceTree = "<group>"; };
+		CLG00002000000000000F01 /* ClaudeCLIRateLimitGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/CLI/ClaudeCLIRateLimitGate.swift; sourceTree = "<group>"; };
+		CLW00002000000000000F01 /* ClaudeWebCookieReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/Web/ClaudeWebCookieReader.swift; sourceTree = "<group>"; };
+		CWF00002000000000000F01 /* ClaudeWebAPIFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/Web/ClaudeWebAPIFetcher.swift; sourceTree = "<group>"; };
 		BBBB0004000000000000F002 /* QuotaProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaProvider.swift; sourceTree = "<group>"; };
 		CCCC0002000000000000F001 /* ProviderStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/ProviderStatusTests.swift; sourceTree = "<group>"; };
 		CCCC0006000000000000F003 /* MiniMaxProviderParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/MiniMaxProviderParserTests.swift; sourceTree = "<group>"; };
@@ -100,6 +143,8 @@
 		C0DE0008000000000000F004 /* CodexProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/CodexProviderTests.swift; sourceTree = "<group>"; };
 		CCST0002000000000000F001 /* CodexCostScannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/CodexCostScannerTests.swift; sourceTree = "<group>"; };
 		CWDT0002000000000000F001 /* CodexWebDashboardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/CodexWebDashboardTests.swift; sourceTree = "<group>"; };
+		CLNT0002000000000000F001 /* ClaudeNativeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/ClaudeNativeTests.swift; sourceTree = "<group>"; };
+		NPT00002000000000000F01 /* NewProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNionTests/NewProviderTests.swift; sourceTree = "<group>"; };
 		CCCC0010000000000000F008 /* BirdNionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BirdNionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDDD0004000000000000F002 /* ConfigService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Services/ConfigService.swift; sourceTree = "<group>"; };
 		DDDD0006000000000000F003 /* QuotaService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Services/QuotaService.swift; sourceTree = "<group>"; };
@@ -108,6 +153,26 @@
 		DDDD00F2000000000000F0E0 /* DeepSeekProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/DeepSeekProvider.swift; sourceTree = "<group>"; };
 		DDDD00F3000000000000F0E0 /* ZaiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/ZaiProvider.swift; sourceTree = "<group>"; };
 		DDDD00F4000000000000F0E0 /* ClaudeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/ClaudeProvider.swift; sourceTree = "<group>"; };
+		ELP00002000000000000F01 /* ElevenLabsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/ElevenLabsProvider.swift; sourceTree = "<group>"; };
+		DGP00002000000000000F01 /* DeepgramProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/DeepgramProvider.swift; sourceTree = "<group>"; };
+		GRP00002000000000000F01 /* GroqProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/GroqProvider.swift; sourceTree = "<group>"; };
+		CPL00002000000000000F01 /* CopilotProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/CopilotProvider.swift; sourceTree = "<group>"; };
+		CPL00004000000000000F01 /* CopilotOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Copilot/CopilotOAuth.swift; sourceTree = "<group>"; };
+		KIL00002000000000000F01 /* KiloProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/KiloProvider.swift; sourceTree = "<group>"; };
+		KIL00004000000000000F01 /* KiloUsageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Kilo/KiloUsageSource.swift; sourceTree = "<group>"; };
+		KIL00006000000000000F01 /* KiloOrganization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Kilo/KiloOrganization.swift; sourceTree = "<group>"; };
+		PCR00002000000000000F01 /* ProviderCookieReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Shared/ProviderCookieReader.swift; sourceTree = "<group>"; };
+		CMC00002000000000000F01 /* CommandCodeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/CommandCodeProvider.swift; sourceTree = "<group>"; };
+		MIM00002000000000000F01 /* MiMoProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/MiMoProvider.swift; sourceTree = "<group>"; };
+		CUR00002000000000000F01 /* CursorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/CursorProvider.swift; sourceTree = "<group>"; };
+		ALB00002000000000000F01 /* AlibabaProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/AlibabaProvider.swift; sourceTree = "<group>"; };
+		OPC00002000000000000F01 /* OpenCodeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/OpenCodeProvider.swift; sourceTree = "<group>"; };
+		OCG00002000000000000F01 /* OpenCodeGoProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/OpenCodeGoProvider.swift; sourceTree = "<group>"; };
+		GEM00002000000000000F01 /* GeminiProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/GeminiProvider.swift; sourceTree = "<group>"; };
+		KRO00002000000000000F01 /* KiroProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/KiroProvider.swift; sourceTree = "<group>"; };
+		ANT00002000000000000F01 /* AntigravityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/AntigravityProvider.swift; sourceTree = "<group>"; };
+		ANT00004000000000000F01 /* AntigravityOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Antigravity/AntigravityOAuth.swift; sourceTree = "<group>"; };
+		BED00002000000000000F01 /* BedrockProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/BedrockProvider.swift; sourceTree = "<group>"; };
 		PVD0002000000000000F002 /* ClaudeCLIVersionDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/ClaudeCLIVersionDetector.swift; sourceTree = "<group>"; };
 		CC0001000000000000F001 /* ClaudeCostScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Claude/ClaudeCostScanner.swift; sourceTree = "<group>"; };
 		MV0002000000000000F001 /* MenuBarVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Views/MenuBarVisibility.swift; sourceTree = "<group>"; };
@@ -163,6 +228,7 @@
 			buildActionMask = 2147483647;
 			files = (
 			LSP0003000000000000BF001 /* CodexBarCore in Frameworks */,
+			SCK00003000000000000BF02 /* SweetCookieKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -192,6 +258,8 @@
 				C0DE0007000000000000B004 /* CodexProviderTests.swift in Sources */,
 				CCST0001000000000000B001 /* CodexCostScannerTests.swift in Sources */,
 				CWDT0001000000000000B001 /* CodexWebDashboardTests.swift in Sources */,
+				CLNT0001000000000000B001 /* ClaudeNativeTests.swift in Sources */,
+				NPT00001000000000000B01 /* NewProviderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -300,6 +368,7 @@
 			name = BirdNion;
 			packageProductDependencies = (
 				LSP0002000000000000PD001 /* CodexBarCore */,
+				SCK00002000000000000PD02 /* SweetCookieKit */,
 			);
 			productName = BirdNion;
 			productReference = AAAA0003000000000000F002 /* BirdNion.app */;
@@ -355,6 +424,7 @@
 			productRefGroup = AAAA0008000000000000G003 /* Products */;
 			packageReferences = (
 				LSP0001000000000000PR001 /* XCLocalSwiftPackageReference "../CodexBar" */,
+				SCK00001000000000000PR02 /* XCRemoteSwiftPackageReference "SweetCookieKit" */,
 			);
 			projectDirPath = "";
 			projectRoot = "";
@@ -380,10 +450,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		SCK00001000000000000PR02 /* XCRemoteSwiftPackageReference "SweetCookieKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/steipete/SweetCookieKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		LSP0002000000000000PD001 /* CodexBarCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CodexBarCore;
+		};
+		SCK00002000000000000PD02 /* SweetCookieKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SCK00001000000000000PR02 /* XCRemoteSwiftPackageReference "SweetCookieKit" */;
+			productName = SweetCookieKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 
@@ -397,6 +483,16 @@
 				AAAA0001000000000000B001 /* BirdNionApp.swift in Sources */,
 				BBBB0001000000000000B001 /* ProviderStatus.swift in Sources */,
 				PCST0001000000000000B001 /* ProviderCostSnapshot.swift in Sources */,
+				CLM00001000000000000B01 /* ClaudeUsageModels.swift in Sources */,
+				CLP00001000000000000B01 /* ClaudeSourcePlanner.swift in Sources */,
+				CLU00001000000000000B01 /* ClaudeUsageOrchestrator.swift in Sources */,
+				CLO00001000000000000B01 /* ClaudeOAuth.swift in Sources */,
+				CLA00001000000000000B01 /* ClaudeAdminAPIUsage.swift in Sources */,
+				CLT00001000000000000B01 /* ClaudeTokenAccounts.swift in Sources */,
+				CLC00001000000000000B01 /* ClaudeCLISession.swift in Sources */,
+				CLG00001000000000000B01 /* ClaudeCLIRateLimitGate.swift in Sources */,
+				CLW00001000000000000B01 /* ClaudeWebCookieReader.swift in Sources */,
+				CWF00001000000000000B01 /* ClaudeWebAPIFetcher.swift in Sources */,
 				BBBB0003000000000000B002 /* QuotaProvider.swift in Sources */,
 				DDDD0003000000000000B002 /* ConfigService.swift in Sources */,
 				DDDD0005000000000000B003 /* QuotaService.swift in Sources */,
@@ -405,6 +501,26 @@
 				DDDD00E2000000000000B0E0 /* DeepSeekProvider.swift in Sources */,
 				DDDD00E3000000000000B0E0 /* ZaiProvider.swift in Sources */,
 				DDDD00E4000000000000B0E0 /* ClaudeProvider.swift in Sources */,
+				ELP00001000000000000B01 /* ElevenLabsProvider.swift in Sources */,
+				DGP00001000000000000B01 /* DeepgramProvider.swift in Sources */,
+				GRP00001000000000000B01 /* GroqProvider.swift in Sources */,
+				CPL00001000000000000B01 /* CopilotProvider.swift in Sources */,
+				CPL00003000000000000B01 /* CopilotOAuth.swift in Sources */,
+				KIL00001000000000000B01 /* KiloProvider.swift in Sources */,
+				KIL00003000000000000B01 /* KiloUsageSource.swift in Sources */,
+				KIL00005000000000000B01 /* KiloOrganization.swift in Sources */,
+				PCR00001000000000000B01 /* ProviderCookieReader.swift in Sources */,
+				CMC00001000000000000B01 /* CommandCodeProvider.swift in Sources */,
+				MIM00001000000000000B01 /* MiMoProvider.swift in Sources */,
+				CUR00001000000000000B01 /* CursorProvider.swift in Sources */,
+				ALB00001000000000000B01 /* AlibabaProvider.swift in Sources */,
+				OPC00001000000000000B01 /* OpenCodeProvider.swift in Sources */,
+				OCG00001000000000000B01 /* OpenCodeGoProvider.swift in Sources */,
+				GEM00001000000000000B01 /* GeminiProvider.swift in Sources */,
+				KRO00001000000000000B01 /* KiroProvider.swift in Sources */,
+				ANT00001000000000000B01 /* AntigravityProvider.swift in Sources */,
+				ANT00003000000000000B01 /* AntigravityOAuth.swift in Sources */,
+				BED00001000000000000B01 /* BedrockProvider.swift in Sources */,
 				PVD0001000000000000B001 /* ClaudeCLIVersionDetector.swift in Sources */,
 				DDDD000B0000000000B006 /* HapoHubConfig.swift in Sources */,
 				DDDD000D0000000000B007 /* HapoHubProvider.swift in Sources */,
@@ -538,7 +654,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.4.2;
+				MARKETING_VERSION = 0.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.local.birdnion";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -565,7 +681,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.4.2;
+				MARKETING_VERSION = 0.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.local.birdnion";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;

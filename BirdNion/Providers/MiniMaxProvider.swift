@@ -119,40 +119,112 @@ final class MiniMaxProvider: QuotaProvider {
         // 2026-06-25 storage refactor consolidated all secrets into the
         // single config file.
         let token = BirdNionConfigStore.minimaxToken()
-        guard let token, !token.isEmpty else {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "Chưa cấu hình token")
+        if let token, !token.isEmpty {
+            return await fetchWithAPIToken(token)
         }
-        let accountLabel = Self.deriveAccountLabel(override: override(), token: token)
+        // No API token → try cookie/web fallback (best-effort).
+        return await fetchWithCookie()
+    }
 
-        var req = URLRequest(url: Self.endpoint(region: .current))
+    // MARK: - API token path
+
+    private func fetchWithAPIToken(_ token: String) async -> ProviderStatus {
+        let accountLabel = Self.deriveAccountLabel(override: override(), token: token)
+        let region = MiniMaxRegion.current
+
+        var req = URLRequest(url: Self.endpoint(region: region))
         req.httpMethod = "GET"
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.timeoutInterval = 15
 
         let data: Data
-        let response: URLResponse
+        let httpResponse: HTTPURLResponse
         do {
-            (data, response) = try await session.data(for: req)
+            let (d, r) = try await session.data(for: req)
+            guard let h = r as? HTTPURLResponse else {
+                return ProviderStatus(id: id, displayName: displayName, windows: [],
+                                      lastUpdated: Date(), error: "Response không phải HTTP")
+            }
+            data = d
+            httpResponse = h
         } catch {
             return ProviderStatus(id: id, displayName: displayName, windows: [],
                                   lastUpdated: Date(),
                                   error: "Network: \(error.localizedDescription)")
         }
 
-        guard let http = response as? HTTPURLResponse else {
+        guard (200..<300).contains(httpResponse.statusCode) else {
             return ProviderStatus(id: id, displayName: displayName, windows: [],
                                   lastUpdated: Date(),
-                                  error: "Response không phải HTTP")
-        }
-        guard (200..<300).contains(http.statusCode) else {
-            return ProviderStatus(id: id, displayName: displayName, windows: [],
-                                  lastUpdated: Date(),
-                                  error: "HTTP \(http.statusCode)")
+                                  error: "HTTP \(httpResponse.statusCode)")
         }
         return parse(data, accountLabel: accountLabel)
+    }
+
+    // MARK: - Cookie / web fallback path
+
+    /// Called when no API token is configured. Tries to read a session cookie
+    /// from the user's browser for `platform.minimax.io` (global) then
+    /// `platform.minimaxi.com` (China). On success, hits the same
+    /// `coding_plan/remains` JSON endpoint with the cookie header.
+    /// Returns an error status when neither domain yields a usable cookie.
+    private func fetchWithCookie() async -> ProviderStatus {
+        let region = MiniMaxRegion.current
+        // Prefer the region-specific domain first, then try the other one as
+        // fallback so users don't have to change the region picker just to get
+        // cookie auth working.
+        let domains: [String]
+        switch region {
+        case .io:  domains = ["platform.minimax.io", "platform.minimaxi.com"]
+        case .com: domains = ["platform.minimaxi.com", "platform.minimax.io"]
+        }
+
+        guard let cookieHeader = domains.lazy.compactMap({ [self] in
+            ProviderCookieReader.resolvedCookieHeader(providerID: self.id, domain: $0)
+        }).first else {
+            return ProviderStatus(id: id, displayName: displayName, windows: [],
+                                  lastUpdated: Date(),
+                                  error: "Chưa cấu hình token và không tìm thấy cookie trình duyệt")
+        }
+
+        var req = URLRequest(url: Self.endpoint(region: region))
+        req.httpMethod = "GET"
+        req.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
+        req.setValue("application/json, text/plain, */*", forHTTPHeaderField: "Accept")
+        req.setValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            forHTTPHeaderField: "User-Agent")
+        req.setValue("XMLHttpRequest", forHTTPHeaderField: "X-Requested-With")
+        req.setValue("https://\(region.platformHost)", forHTTPHeaderField: "Origin")
+        req.timeoutInterval = 15
+
+        let data: Data
+        let httpResponse: HTTPURLResponse
+        do {
+            let (d, r) = try await session.data(for: req)
+            guard let h = r as? HTTPURLResponse else {
+                return ProviderStatus(id: id, displayName: displayName, windows: [],
+                                      lastUpdated: Date(), error: "Response không phải HTTP")
+            }
+            data = d
+            httpResponse = h
+        } catch {
+            return ProviderStatus(id: id, displayName: displayName, windows: [],
+                                  lastUpdated: Date(),
+                                  error: "Network (cookie): \(error.localizedDescription)")
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            return ProviderStatus(id: id, displayName: displayName, windows: [],
+                                  lastUpdated: Date(),
+                                  error: "HTTP \(httpResponse.statusCode) (cookie)")
+        }
+        // Parse the same JSON envelope as the API token path.
+        // accountLabel is not derived from a token, so use override or a
+        // generic placeholder.
+        let label = override() ?? "cookie"
+        return parse(data, accountLabel: label)
     }
 
     func parse(_ data: Data, accountLabel: String) -> ProviderStatus {
@@ -212,12 +284,54 @@ final class MiniMaxProvider: QuotaProvider {
                 resetDate: weeklyReset,
                 windowSeconds: 7 * 24 * 3600))
         }
+
+        // Best-effort: subscription expiry / renewal window
+        // `current_subscribe_end_time_ts` and `renewal_trigger_time_ts` are
+        // epoch-ms values that appear in some combo/subscription responses.
+        // When present, surface a pseudo-window so the user sees the date.
+        if let expiresMs = root.current_subscribe_end_time_ts, expiresMs > 0 {
+            let expiresDate = Date(timeIntervalSince1970: TimeInterval(expiresMs) / 1000)
+            let renewsDate = root.renewal_trigger_time_ts.flatMap { ms -> Date? in
+                guard ms > 0 else { return nil }
+                return Date(timeIntervalSince1970: TimeInterval(ms) / 1000)
+            }
+            // Show "Gia hạn" if a renewal date is known, otherwise "Hết hạn".
+            let subLabel = renewsDate != nil ? "Gia hạn" : "Hết hạn"
+            let resetDate = renewsDate ?? expiresDate
+            // Percent is not meaningful for subscription expiry — show 100%
+            // remaining until expired (sentinel so the bar doesn't look alarming).
+            windows.append(QuotaWindow(
+                label: subLabel,
+                usedPct: 0,
+                remainingPct: 100,
+                resetDate: resetDate,
+                windowSeconds: 30 * 24 * 3600))
+        }
+
+        // Best-effort: points/credit balance exposed as a ProviderCostSnapshot.
+        // `points_balance` / `point_balance` / `credits_balance` — whichever
+        // the API returns first. Treated as a raw balance with no limit when
+        // no limit field is present (limit defaults to same value → 0 used).
+        let cost: ProviderCostSnapshot? = {
+            guard let balance = root.pointsBalance, balance > 0 else { return nil }
+            return ProviderCostSnapshot(
+                used: 0,
+                limit: balance,
+                currencyCode: "pts",
+                period: nil,
+                resetsAt: nil,
+                nextRegenAmount: nil,
+                personalUsed: nil,
+                updatedAt: Date())
+        }()
+
         return ProviderStatus(id: id, displayName: displayName,
                               windows: windows,
                               lastUpdated: Date(),
                               error: nil,
                               accountLabel: accountLabel,
-                              planName: root.planDisplayName)
+                              planName: root.planDisplayName,
+                              cost: cost)
     }
 
     private struct RemainsResponse: Decodable {
@@ -229,14 +343,47 @@ final class MiniMaxProvider: QuotaProvider {
         let plan_name: String?
         let combo_title: String?
         let current_plan_title: String?
+        // Best-effort subscription dates (epoch-ms). Present in some
+        // combo/subscription-plan responses but not the standard API response.
+        let current_subscribe_end_time_ts: Int?
+        let renewal_trigger_time_ts: Int?
+        // Best-effort points/credit balance. Field name varies by API version;
+        // decoded manually so we can check all known aliases.
+        let points_balance: Double?
+        let point_balance: Double?
+        let credits_balance: Double?
+        let credit_balance: Double?
 
-        /// First non-empty candidate, trimmed. nil if none set.
+        /// First non-empty plan name candidate, trimmed. nil if none set.
         var planDisplayName: String? {
             for raw in [current_subscribe_title, plan_name, combo_title, current_plan_title] {
                 if let v = raw?.trimmingCharacters(in: .whitespacesAndNewlines),
                    !v.isEmpty { return v }
             }
             return nil
+        }
+
+        /// First non-nil, positive balance across all known field names.
+        var pointsBalance: Double? {
+            for v in [points_balance, point_balance, credits_balance, credit_balance] {
+                if let b = v, b > 0 { return b }
+            }
+            return nil
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case base_resp
+            case model_remains
+            case current_subscribe_title
+            case plan_name
+            case combo_title
+            case current_plan_title
+            case current_subscribe_end_time_ts
+            case renewal_trigger_time_ts
+            case points_balance
+            case point_balance
+            case credits_balance
+            case credit_balance
         }
     }
     private struct BaseResp: Decodable {

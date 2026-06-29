@@ -59,6 +59,15 @@ enum BirdNionConfigStore {
         var apiKey: String?
         var enabled: Bool?
         var region: String?
+        var budget: Double?
+        /// Deepgram project ID — when set, fetch only that project; blank = aggregate all.
+        var projectID: String?
+        /// Bedrock AWS secret access key (paired with `apiKey` = access key ID).
+        var secretKey: String?
+        /// Bedrock auth mode: "keys" (static access keys) or "profile" (named AWS profile).
+        var awsAuthMode: String?
+        /// Bedrock named AWS profile (when `awsAuthMode == "profile"`).
+        var awsProfile: String?
         var baseURL: String?
         var displayName: String?
         var accountLabel: String?
@@ -87,7 +96,22 @@ enum BirdNionConfigStore {
             Provider(id: "openrouter", enabled: false),
             Provider(id: "deepseek", enabled: false),
             Provider(id: "zai", enabled: false),
-            Provider(id: "claude", enabled: false)
+            Provider(id: "claude", enabled: false),
+            Provider(id: "elevenlabs", enabled: false),
+            Provider(id: "deepgram", enabled: false),
+            Provider(id: "groq", enabled: false),
+            Provider(id: "copilot", enabled: false),
+            Provider(id: "kilo", enabled: false),
+            Provider(id: "commandcode", enabled: false),
+            Provider(id: "mimo", enabled: false),
+            Provider(id: "alibaba", enabled: false),
+            Provider(id: "cursor", enabled: false),
+            Provider(id: "gemini", enabled: false),
+            Provider(id: "kiro", enabled: false),
+            Provider(id: "opencode", enabled: false),
+            Provider(id: "opencodego", enabled: false),
+            Provider(id: "antigravity", enabled: false),
+            Provider(id: "bedrock", enabled: false)
         ])
     }()
 
@@ -97,15 +121,18 @@ enum BirdNionConfigStore {
     }
 
     static func allProviders(url: URL = configURL()) -> [Provider] {
-        if let existing = read(url: url)?.providers {
-            return existing
+        let defaults = defaultDocument.providers ?? []
+        guard let existing = read(url: url)?.providers else {
+            // First-run / no config file: show the full canonical list disabled.
+            return defaults
         }
-        // First-run fallback: when the config file is absent (fresh
-        // install) return the canonical provider list with every entry
-        // disabled. This mirrors the prior `ProvidersStore.load()`
-        // defaultDocument so the Settings sidebar always shows all 7
-        // providers and the user can opt in via toggles.
-        return defaultDocument.providers ?? []
+        // Merge: keep the user's saved providers (their enabled state, token,
+        // and order), then APPEND any provider added to `defaultDocument` that
+        // isn't in the saved file yet. This makes newly-shipped providers show
+        // up in the sidebar for existing users without wiping their config.
+        let existingIDs = Set(existing.map { $0.id })
+        let missing = defaults.filter { !existingIDs.contains($0.id) }
+        return existing + missing
     }
 
     static func provider(id: String, url: URL = configURL()) -> Provider? {

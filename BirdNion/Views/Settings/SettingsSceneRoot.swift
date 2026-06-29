@@ -49,7 +49,7 @@ struct SettingsSceneRoot: View {
     /// because a window that re-fits its content on every re-render (e.g. each
     /// QuotaService publish) drives NSHostingView's autoresizing constraints
     /// into an NSISEngine recursion that crashes the whole app.
-    private let contentWidth: CGFloat = 600
+    private let contentWidth: CGFloat = 720   // 600 + 20% for the wider provider roster
 
     var body: some View {
         VStack(spacing: 0) {

@@ -38,6 +38,15 @@ enum CodexWebDashboard {
             return cached
         }
         guard let snapshot = await scrape(email: email) else { return nil }
+        // Ownership guard: if the caller supplied a specific email, discard the
+        // snapshot when the dashboard reports a *different* signed-in account.
+        // This prevents data from one account leaking into another account's UI.
+        if let requestedEmail = email,
+           let signedIn = snapshot.signedInEmail,
+           requestedEmail.lowercased() != signedIn.lowercased()
+        {
+            return nil
+        }
         let extras = map(snapshot)
         await Cache.shared.store(key: key, value: extras, at: now)
         return extras

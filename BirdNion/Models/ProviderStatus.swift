@@ -149,6 +149,13 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
     /// credits, purchase URL) — populated only when the user enables OpenAI web
     /// extras. nil otherwise.
     let codexWeb: CodexWebExtras?
+    /// Claude Admin-API org usage dashboard (30-day cost/token/per-model
+    /// breakdown). Populated only when the Claude source is `.api`. The popover
+    /// renders it as a chart card. nil for every other provider/source.
+    let claudeAdminUsage: ClaudeAdminAPIUsageSnapshot?
+    /// Structured Kiro credits/overage for the menu-bar display-mode picker
+    /// (credits left / percent / used÷total / overage). nil for non-Kiro.
+    let kiroMenu: KiroMenuUsage?
 
     init(id: String,
          displayName: String,
@@ -168,7 +175,9 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
          cost: ProviderCostSnapshot? = nil,
          webExtras: ClaudeWebExtras? = nil,
          sourceLabel: String? = nil,
-         codexWeb: CodexWebExtras? = nil) {
+         codexWeb: CodexWebExtras? = nil,
+         claudeAdminUsage: ClaudeAdminAPIUsageSnapshot? = nil,
+         kiroMenu: KiroMenuUsage? = nil) {
         self.id = id
         self.displayName = displayName
         self.windows = windows
@@ -188,6 +197,39 @@ struct ProviderStatus: Identifiable, Codable, Equatable {
         self.webExtras = webExtras
         self.sourceLabel = sourceLabel
         self.codexWeb = codexWeb
+        self.claudeAdminUsage = claudeAdminUsage
+        self.kiroMenu = kiroMenu
+    }
+}
+
+/// Structured Kiro usage consumed by the menu-bar display-mode picker.
+/// All optional so a partial parse still yields what it found.
+struct KiroMenuUsage: Codable, Equatable, Sendable {
+    /// Credits remaining (plan credits left).
+    let creditsRemaining: Double?
+    /// Credits used this period.
+    let creditsUsed: Double?
+    /// Total plan credits this period.
+    let creditsTotal: Double?
+    /// Primary window's remaining percent (drives the percent modes).
+    let primaryRemainingPct: Int?
+    /// Pay-as-you-go overage credits used beyond the plan (when exhausted).
+    let overageCreditsUsed: Double?
+    /// Pay-as-you-go overage cost in USD (when exhausted).
+    let overageCostUSD: Double?
+
+    init(creditsRemaining: Double? = nil,
+         creditsUsed: Double? = nil,
+         creditsTotal: Double? = nil,
+         primaryRemainingPct: Int? = nil,
+         overageCreditsUsed: Double? = nil,
+         overageCostUSD: Double? = nil) {
+        self.creditsRemaining = creditsRemaining
+        self.creditsUsed = creditsUsed
+        self.creditsTotal = creditsTotal
+        self.primaryRemainingPct = primaryRemainingPct
+        self.overageCreditsUsed = overageCreditsUsed
+        self.overageCostUSD = overageCostUSD
     }
 }
 

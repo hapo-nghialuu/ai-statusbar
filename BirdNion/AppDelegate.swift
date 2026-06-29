@@ -340,14 +340,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.imagePosition = .imageOnly
             button.image = MenuBarIconRenderer.iconImage()
             button.title = ""
-        case let .provider(id, _, percents):
+        case let .provider(id, _, percents, text):
             // Numbers on the left, brand logo on the right. A trailing space
             // keeps the last number off the logo; two spaces separate the
             // two quota numbers so they read as distinct values.
             button.imagePosition = .imageRight
             button.image = MenuBarIconRenderer.providerLogo(for: id)
-            let numbers = percents.map(String.init).joined(separator: "  ")
-            button.title = "\(numbers) "
+            if let text {
+                // Display-mode override (Kiro). Empty string = hidden → logo only.
+                button.title = text.isEmpty ? "" : "\(text) "
+            } else {
+                let numbers = percents.map(String.init).joined(separator: "  ")
+                button.title = "\(numbers) "
+            }
         }
     }
 

@@ -30,7 +30,10 @@ final class DeepSeekProvider: QuotaProvider {
     }
 
     func fetch() async throws -> ProviderStatus {
-        let token = BirdNionConfigStore.apiKey(provider: id)
+        // Env override first (DEEPSEEK_API_KEY), then config storage.
+        let envToken = ProcessInfo.processInfo.environment["DEEPSEEK_API_KEY"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let token = (envToken?.isEmpty == false ? envToken : nil) ?? BirdNionConfigStore.apiKey(provider: id)
         guard let token, !token.isEmpty else {
             return failure("Chưa cấu hình token")
         }
@@ -58,18 +61,28 @@ final class DeepSeekProvider: QuotaProvider {
         guard let root = try? JSONDecoder().decode(BalanceResponse.self, from: data) else {
             return failure("Response thiếu trường")
         }
-        guard let info = root.balanceInfos.first else {
+        // Prefer the USD-funded entry when multiple currencies are present.
+        guard let info = root.balanceInfos.first(where: { $0.currency == "USD" }) ?? root.balanceInfos.first else {
             return failure("Không có thông tin số dư")
         }
         let amount = Double(info.totalBalance) ?? 0
         let symbol = info.currency == "CNY" ? "¥" : "$"
         // Balance-only provider: a single full-width window carries the figure
-        // as a subtitle so the row isn't blank, but there is no real %.
+        // as a subtitle. When the balance runs out we flag it red (usedPct=100).
+        let lowBalance = amount <= 0
+        let subtitle: String
+        if lowBalance {
+            subtitle = "Hết số dư — cần nạp thêm"
+        } else if let toppedUp = info.toppedUpBalance, let granted = info.grantedBalance {
+            subtitle = "\(symbol)\(info.totalBalance) · Trả: \(symbol)\(toppedUp) · Tặng: \(symbol)\(granted)"
+        } else {
+            subtitle = "\(symbol)\(info.totalBalance)"
+        }
         let window = QuotaWindow(
             label: "Số dư",
-            usedPct: 0,
-            remainingPct: 100,
-            subtitle: "\(symbol)\(info.totalBalance)")
+            usedPct: lowBalance ? 100 : 0,
+            remainingPct: lowBalance ? 0 : 100,
+            subtitle: subtitle)
         return ProviderStatus(
             id: id,
             displayName: displayName,
@@ -95,9 +108,13 @@ final class DeepSeekProvider: QuotaProvider {
     private struct BalanceInfo: Decodable {
         let currency: String
         let totalBalance: String
+        let grantedBalance: String?
+        let toppedUpBalance: String?
         enum CodingKeys: String, CodingKey {
             case currency
             case totalBalance = "total_balance"
+            case grantedBalance = "granted_balance"
+            case toppedUpBalance = "topped_up_balance"
         }
     }
 }

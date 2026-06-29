@@ -76,6 +76,36 @@ final class ServicesContainer: ObservableObject {
             case "claude":
                 // Zero-config: reads Anthropic key from BirdNionConfigStore.
                 result.append(ClaudeProvider())
+            case "elevenlabs":
+                result.append(ElevenLabsProvider())
+            case "deepgram":
+                result.append(DeepgramProvider())
+            case "groq":
+                result.append(GroqProvider())
+            case "copilot":
+                result.append(CopilotProvider())
+            case "kilo":
+                result.append(KiloProvider())
+            case "commandcode":
+                result.append(CommandCodeProvider())
+            case "mimo":
+                result.append(MiMoProvider())
+            case "cursor":
+                result.append(CursorProvider())
+            case "alibaba":
+                result.append(AlibabaProvider())
+            case "opencode":
+                result.append(OpenCodeProvider())
+            case "opencodego":
+                result.append(OpenCodeGoProvider())
+            case "gemini":
+                result.append(GeminiProvider())
+            case "kiro":
+                result.append(KiroProvider())
+            case "antigravity":
+                result.append(AntigravityProvider())
+            case "bedrock":
+                result.append(BedrockProvider())
             default:
                 break
             }
