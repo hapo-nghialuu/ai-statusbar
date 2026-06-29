@@ -1125,6 +1125,38 @@ struct ProvidersPane: View {
                 .padding(.vertical, 10)
             }
 
+            if row.id == "hapo" {
+                let vi = L10n.languageCode(language) == "vi"
+                SettingsRowDivider()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Base URL")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(SettingsTheme.primary)
+                    Text(vi
+                         ? "URL endpoint budget của AI Hub (vd https://…/v1/budget/week). Bắt buộc để lấy dữ liệu."
+                         : "AI Hub budget endpoint URL (e.g. https://…/v1/budget/week). Required to fetch data.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(SettingsTheme.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    TextField("https://…/v1/budget/week", text: Binding(
+                        get: { rows[idx].baseURL ?? "" },
+                        set: { raw in
+                            let v = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                            rows[idx].baseURL = v.isEmpty ? nil : v
+                            saveAll()
+                            // baseURL is baked into the provider at build time
+                            // (ServicesContainer), so rebuild — not just refetch.
+                            NotificationCenter.default.post(name: .birdnionProvidersChanged, object: nil)
+                            NotificationCenter.default.post(name: .birdnionRefresh, object: nil)
+                        }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+            }
+
             if row.id == "claude" {
                 claudeUsageSourcePicker()
                 claudeCookieSourcePicker()
