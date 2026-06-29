@@ -401,9 +401,19 @@ struct ProvidersPane: View {
                 rows = BirdNionConfigStore.allProviders()
                 NotificationCenter.default.post(name: .birdnionProvidersChanged, object: nil)
             } label: {
-                Image(systemName: "arrow.clockwise")
+                // Swap the reload glyph for a spinner while a refresh is in
+                // flight so clicking gives immediate visual feedback (the
+                // header subtitle also flips to "Đang cập nhật").
+                ZStack {
+                    if quota.isRefreshing {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                }
             }
             .controlSize(.small)
+            .disabled(quota.isRefreshing)
             .help(L10n.t("provider.reloadHelp", language))
 
             Toggle("", isOn: enabledBinding(idx))
@@ -2668,6 +2678,11 @@ struct ProvidersPane: View {
     /// Header subtitle: prefix the CLI version when known (Codex), e.g.
     /// "codex-cli 0.140.0 • 2 giây trước".
     private func headerSubtitle(for row: BirdNionConfigStore.Provider) -> String {
+        // While a refresh is running, surface it here too (the popover header
+        // does the same) so the user sees the click took effect.
+        if quota.isRefreshing {
+            return L10n.t("popover.updating", language)
+        }
         let updated = updatedSubtitle(for: row.id)
         if let version = status(for: row.id)?.version, !version.isEmpty {
             return "\(version) • \(updated)"

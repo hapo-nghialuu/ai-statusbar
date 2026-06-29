@@ -370,7 +370,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // refresh statuses so the tab data is fresh too.
         services.rebuildProviders()
         Task { @MainActor in
-            await services.quotaService.refresh()
+            // Force a genuine fetch (bypass per-provider interval throttles) and
+            // mark it manual — same as the popup/header refresh button. Without
+            // forcing, recently-fetched providers are skipped so the refresh
+            // returns instantly: the Settings refresh button would flip to
+            // "Đang cập nhật" then snap back with no real update.
+            let ids = Set(services.quotaService.providers.map(\.id))
+            await RefreshInteraction.$isManual.withValue(true) {
+                await services.quotaService.refresh(forceProviderIDs: ids)
+            }
             updateFrames(from: services.quotaService.displayStatuses)
             frameIndex = 0
             applyCurrentFrame()
