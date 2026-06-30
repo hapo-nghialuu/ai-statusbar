@@ -187,6 +187,16 @@ enum BirdNionConfigStore {
         try writeConfig(config, url: url)
     }
 
+    /// Persist the full provider list in the given order. Used by Settings
+    /// drag-reorder; single-provider upsert preserves an existing array order
+    /// and therefore cannot represent reorder operations.
+    static func saveProviders(_ providers: [Provider], url: URL = configURL()) throws {
+        var config = read(url: url) ?? Config(version: 1, providers: [])
+        config.providers = providers
+        config.version = config.version ?? 1
+        try writeConfig(config, url: url)
+    }
+
     /// Remove one provider entry (clears its token + metadata). The
     /// provider id is removed entirely; a fresh read will not see it.
     static func remove(provider id: String, url: URL = configURL()) throws {

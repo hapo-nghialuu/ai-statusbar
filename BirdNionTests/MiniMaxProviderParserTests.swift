@@ -276,6 +276,25 @@ final class BirdNionConfigStoreTests: XCTestCase {
         XCTAssertEqual(BirdNionConfigStore.apiKey(provider: "minimax", url: testConfigURL), "minimax-key")
     }
 
+    func testSaveProvidersPreservesExplicitOrder() throws {
+        let firstOrder = [
+            BirdNionConfigStore.Provider(id: "minimax", enabled: true),
+            BirdNionConfigStore.Provider(id: "codex", enabled: true),
+            BirdNionConfigStore.Provider(id: "hapo", enabled: true)
+        ]
+        try BirdNionConfigStore.saveProviders(firstOrder, url: testConfigURL)
+
+        let reordered = [
+            BirdNionConfigStore.Provider(id: "codex", enabled: true),
+            BirdNionConfigStore.Provider(id: "minimax", enabled: true),
+            BirdNionConfigStore.Provider(id: "hapo", enabled: true)
+        ]
+        try BirdNionConfigStore.saveProviders(reordered, url: testConfigURL)
+
+        XCTAssertEqual(BirdNionConfigStore.allProviders(url: testConfigURL).prefix(3).map(\.id),
+                       ["codex", "minimax", "hapo"])
+    }
+
     func testDefaultIsEnabledFalse() throws {
         // First-run (2026-06-25) opt-in default: missing `enabled` key
         // returns `false` (NOT the prior `true` from CodexBar compat).

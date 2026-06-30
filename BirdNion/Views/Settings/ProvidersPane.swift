@@ -2677,21 +2677,23 @@ struct ProvidersPane: View {
     }
 
     private func saveAll() {
-        // Persist each row back to BirdNionConfigStore. The store upserts
-        // by provider id so callers don't need to worry about the on-disk
-        // shape — we just hand off the row we already have.
-        for var row in rows {
-            do {
-                if row.id == "hapo" {
-                    row.baseURL = nil
-                }
-                try BirdNionConfigStore.save(row)
-                if row.enabled != true {
-                    quota.remove(id: row.id)
-                }
-            } catch {
-                // Non-fatal: surfaced indirectly through the live status.
+        // Persist the whole row array back to BirdNionConfigStore. Single-row
+        // upsert preserves the old on-disk order, but drag-reorder needs the
+        // current array order written as-is.
+        let persistedRows = rows.map { row -> BirdNionConfigStore.Provider in
+            var copy = row
+            if copy.id == "hapo" {
+                copy.baseURL = nil
             }
+            return copy
+        }
+        do {
+            try BirdNionConfigStore.saveProviders(persistedRows)
+            for row in persistedRows where row.enabled != true {
+                quota.remove(id: row.id)
+            }
+        } catch {
+            // Non-fatal: surfaced indirectly through the live status.
         }
     }
 }
