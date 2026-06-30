@@ -31,7 +31,7 @@ struct ConfigPanel: View {
             if let banner = savedBanner {
                 Text(banner)
                     .font(.system(size: 10))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(VocabbyTheme.success)
                     .padding(.horizontal, 10)
             }
 

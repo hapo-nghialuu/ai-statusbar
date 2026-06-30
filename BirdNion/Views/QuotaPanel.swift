@@ -795,7 +795,7 @@ enum VocabbyTheme {
     static let blue       = Color(red: 0.039, green: 0.518, blue: 1.000)   // #0A84FF
     static let selectedSurface = Color(red: 0.910, green: 0.949, blue: 1.000) // #E8F2FF
     static let yellow     = Color(red: 1.000, green: 0.624, blue: 0.039)   // #FF9F0A
-    static let success    = Color(red: 0.204, green: 0.780, blue: 0.349)   // #34C759
+    static let success    = Color(red: 21 / 255, green: 128 / 255, blue: 61 / 255) // #15803D
     static let critical   = Color(red: 1.000, green: 0.271, blue: 0.227)   // #FF453A
     static let track      = Color(red: 0.898, green: 0.898, blue: 0.918)   // #E5E5EA
     static let badge      = Color(red: 0.969, green: 0.969, blue: 0.980)   // #F7F7FA

@@ -17,7 +17,7 @@ enum SettingsTheme {
     static let secondary = Color(red: 0.431, green: 0.431, blue: 0.451)
     static let tertiary = Color(red: 0.557, green: 0.557, blue: 0.576)
     static let accent = Color(red: 0.039, green: 0.518, blue: 1.000)
-    static let success = Color(red: 0.204, green: 0.780, blue: 0.349)
+    static let success = Color(red: 21 / 255, green: 128 / 255, blue: 61 / 255)
     static let warning = Color(red: 1.000, green: 0.624, blue: 0.039)
     static let critical = Color(red: 1.000, green: 0.271, blue: 0.227)
     static let disabled = Color(red: 0.650, green: 0.650, blue: 0.670)
