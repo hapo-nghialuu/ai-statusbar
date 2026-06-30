@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Providers tab — CodexBar-style two-pane layout: a sidebar listing every
 /// provider (logo + name + status + enable toggle) on the left, and a detail
@@ -10,6 +11,8 @@ import SwiftUI
 /// zero-config (login status from ~/.codex/auth.json); the other providers
 /// take a token.
 struct ProvidersPane: View {
+    private static let providerDragType = UTType(exportedAs: "com.local.birdnion.provider-reorder")
+
     @EnvironmentObject var quota: QuotaService
     @EnvironmentObject var settings: SettingsStore
 
@@ -137,7 +140,7 @@ struct ProvidersPane: View {
             ScrollView {
                 VStack(spacing: 6) {
                     ForEach(Array(visibleRows.enumerated()), id: \.element.id) { idx, row in
-                        sidebarRow(row, position: idx, total: visibleRows.count)
+                        sidebarRow(row, position: idx)
                         if row.id != visibleRows.last?.id {
                             Divider()
                                 .overlay(SettingsTheme.border.opacity(0.72))
@@ -148,7 +151,7 @@ struct ProvidersPane: View {
             }
         }
         .padding(.vertical, 6)
-        .frame(width: 200, alignment: .top)
+        .frame(width: 212, alignment: .top)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(SettingsTheme.card)
@@ -224,9 +227,20 @@ struct ProvidersPane: View {
         .padding(.bottom, 2)
     }
 
-    private func sidebarRow(_ row: BirdNionConfigStore.Provider, position: Int, total: Int) -> some View {
+    private func sidebarRow(_ row: BirdNionConfigStore.Provider, position: Int) -> some View {
         let isSelected = row.id == selectedID
-        return HStack(spacing: 8) {
+        let isHovered = row.id == hoveredRowId
+        let isDropTarget = row.id == dropTargetRowId && row.id != draggedRowId
+        return HStack(spacing: 7) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(isHovered || isDropTarget
+                                 ? SettingsTheme.accent
+                                 : SettingsTheme.tertiary)
+                .frame(width: 12, height: 22)
+                .help(L10n.t("provider.reorderHelp", language))
+                .accessibilityLabel(L10n.t("provider.reorderHelp", language))
+
             // Checkbox toggles this provider's enabled flag in providers.json.
             // Independent of selection, so users can disable a provider they
             // don't want to poll without losing its detail panel.
@@ -263,15 +277,40 @@ struct ProvidersPane: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(isSelected ? SettingsTheme.selectedSurface : .clear)
+                .fill(isDropTarget
+                      ? SettingsTheme.accent.opacity(0.12)
+                      : (isSelected ? SettingsTheme.selectedSurface : .clear))
+                .padding(.horizontal, 6)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(isDropTarget ? SettingsTheme.accent.opacity(0.8) : .clear,
+                              lineWidth: 1.5)
                 .padding(.horizontal, 6)
         )
         .contentShape(Rectangle())
         .onTapGesture { selectedID = row.id }
-        // Drag handle: the whole row is draggable. We tag the id as plain
-        // text so a sibling row's drop delegate can match it.
+        .onHover { hovering in
+            if hovering {
+                hoveredRowId = row.id
+            } else if hoveredRowId == row.id {
+                hoveredRowId = nil
+            }
+        }
+        // The grip communicates reorder affordance, while the whole row stays
+        // draggable so users do not need to hit a narrow handle precisely.
         .onDrag {
-            NSItemProvider(object: row.id as NSString)
+            draggedRowId = row.id
+            dropTargetRowId = nil
+            let provider = NSItemProvider()
+            provider.registerDataRepresentation(
+                forTypeIdentifier: Self.providerDragType.identifier,
+                visibility: .ownProcess
+            ) { completion in
+                completion(row.id.data(using: .utf8), nil)
+                return nil
+            }
+            return provider
         } preview: {
             // Custom preview shows the chip with a slight scale so the user
             // sees what's moving; default preview is a faded snapshot of
@@ -289,14 +328,15 @@ struct ProvidersPane: View {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(SettingsTheme.card))
         }
-        // Drop target: any sibling row can receive the dragged id and
-        // move it to this position. The delegate figures out whether
-        // the drop is "above" or "below" this row.
-        .onDrop(of: [.text], delegate: SidebarRowDropDelegate(
+        // Any sibling row can receive the dragged id and becomes visibly
+        // highlighted before the user releases the mouse.
+        .onDrop(of: [Self.providerDragType], delegate: SidebarRowDropDelegate(
             targetRow: row,
             targetPosition: position,
             draggedProviderId: $draggedRowId,
+            dropTargetRowId: $dropTargetRowId,
             move: moveRow))
+        .animation(.easeOut(duration: 0.12), value: isDropTarget)
     }
 
     /// Binding that flips a single row's `enabled` flag and re-saves the
@@ -321,6 +361,8 @@ struct ProvidersPane: View {
     /// Tracks which row is currently being dragged (used by the drop
     /// delegate to know when to activate the row's drop indicator).
     @State private var draggedRowId: String?
+    @State private var dropTargetRowId: String?
+    @State private var hoveredRowId: String?
 
     // makeProvider was moved to `ServicesContainer.makeProviders(keychain:)`
 // so the same factory powers init() and the live rebuild path triggered
@@ -2515,35 +2557,43 @@ struct ProvidersPane: View {
 
     // MARK: - Drag & drop
 
-    /// Drop delegate that handles reordering the sidebar list when the user
-    /// drags one provider chip onto another. Resolves the dragged provider
-    /// id from the NSItemProvider, then calls `move` with the target row +
-    /// visual position (so the row below can either shift down or stay put
-    /// based on where the cursor lands relative to the row's midline).
+    /// Drop delegate for internal provider reordering. The drag source stores
+    /// its id synchronously, which avoids waiting for NSItemProvider decoding
+    /// after the user releases the mouse.
     private struct SidebarRowDropDelegate: DropDelegate {
         let targetRow: BirdNionConfigStore.Provider
         let targetPosition: Int
         @Binding var draggedProviderId: String?
+        @Binding var dropTargetRowId: String?
         let move: (String, Int) -> Void
 
         func dropEntered(info: DropInfo) {
-            // No-op: visual feedback comes from the row background change.
+            guard let draggedProviderId, draggedProviderId != targetRow.id else { return }
+            dropTargetRowId = targetRow.id
+        }
+
+        func dropExited(info: DropInfo) {
+            if dropTargetRowId == targetRow.id {
+                dropTargetRowId = nil
+            }
         }
 
         func performDrop(info: DropInfo) -> Bool {
-            guard let provider = info.itemProviders(for: [.text]).first else { return false }
-            _ = provider.loadObject(ofClass: NSString.self) { object, _ in
-                guard let id = object as? String, id != targetRow.id else { return }
-                DispatchQueue.main.async {
-                    move(id, targetPosition)
-                    draggedProviderId = nil
-                }
+            guard let draggedProviderId else {
+                dropTargetRowId = nil
+                return false
             }
+            if draggedProviderId != targetRow.id {
+                move(draggedProviderId, targetPosition)
+            }
+            self.draggedProviderId = nil
+            dropTargetRowId = nil
             return true
         }
 
         func validateDrop(info: DropInfo) -> Bool {
-            info.hasItemsConforming(to: [.text])
+            draggedProviderId != nil
+                && info.hasItemsConforming(to: [ProvidersPane.providerDragType])
         }
 
         func dropUpdated(info: DropInfo) -> DropProposal? {
