@@ -88,6 +88,8 @@ final class ServicesContainer: ObservableObject {
                 result.append(KiloProvider())
             case "commandcode":
                 result.append(CommandCodeProvider())
+            case "freemodel":
+                result.append(FreemodelProvider())
             case "mimo":
                 result.append(MiMoProvider())
             case "cursor":

@@ -282,6 +282,9 @@ struct ProviderLogoMark: View {
         case "commandcode":
             Image("CommandCodeLogo").resizable().interpolation(.high)
                 .foregroundStyle(VocabbyTheme.commandCode)
+        case "freemodel":
+            Image("FreemodelLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.freemodel)
         case "mimo":
             Image("MiMoLogo").resizable().interpolation(.high)
                 .foregroundStyle(VocabbyTheme.mimo)
@@ -814,6 +817,7 @@ enum VocabbyTheme {
     static let copilot    = Color(red: 168 / 255, green: 85 / 255, blue: 247 / 255)  // #A855F7
     static let kilo       = Color(red: 242 / 255, green: 112 / 255, blue: 39 / 255)  // #F27027
     static let commandCode = Color(red: 0, green: 0, blue: 0)                        // #000000 (CodexBar)
+    static let freemodel  = Color(red: 34 / 255, green: 197 / 255, blue: 94 / 255)  // #22C55E (brand green)
     static let mimo       = Color(red: 255 / 255, green: 105 / 255, blue: 0 / 255)   // #FF6900 (Xiaomi)
     static let alibaba    = Color(red: 255 / 255, green: 106 / 255, blue: 0 / 255)   // #FF6A00
     static let cursor     = Color(red: 0, green: 191 / 255, blue: 165 / 255)         // #00BFA5
@@ -838,6 +842,7 @@ enum VocabbyTheme {
         case "copilot": return copilot
         case "kilo": return kilo
         case "commandcode": return commandCode
+        case "freemodel": return freemodel
         case "mimo": return mimo
         case "alibaba": return alibaba
         case "cursor": return cursor

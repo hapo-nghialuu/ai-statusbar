@@ -1327,7 +1327,7 @@ struct ProvidersPane: View {
 
     /// Provider ids that authenticate via a browser session cookie (no API token).
     static let cookieProviderIDs: Set<String> = [
-        "commandcode", "mimo", "alibaba", "opencode", "opencodego", "cursor",
+        "commandcode", "mimo", "alibaba", "opencode", "opencodego", "cursor", "freemodel",
     ]
 
     /// Cookie-source picker (Auto / Manual / Off) + manual Cookie-header field.
@@ -2503,6 +2503,8 @@ struct ProvidersPane: View {
             return [dash("https://app.kilo.ai/usage")].compactMap { $0 }
         case "commandcode":
             return [dash("https://commandcode.ai/studio")].compactMap { $0 }
+        case "freemodel":
+            return [usage("https://freemodel.dev/dashboard/usage")].compactMap { $0 }
         case "mimo":
             return [dash("https://platform.xiaomimimo.com/#/console/balance")].compactMap { $0 }
         case "opencode", "opencodego":
@@ -2639,6 +2641,7 @@ struct ProvidersPane: View {
         case "opencodego": "OpenCode Go"
         case "antigravity": "Antigravity"
         case "bedrock": "AWS Bedrock"
+        case "freemodel": "FreeModel"
         default: row.displayName ?? row.id
         }
     }
@@ -2768,6 +2771,9 @@ struct ProviderLogoView: View {
         case "commandcode":
             Image("CommandCodeLogo").resizable().interpolation(.high)
                 .foregroundStyle(VocabbyTheme.commandCode)
+        case "freemodel":
+            Image("FreemodelLogo").resizable().interpolation(.high)
+                .foregroundStyle(VocabbyTheme.freemodel)
         case "mimo":
             Image("MiMoLogo").resizable().interpolation(.high)
                 .foregroundStyle(VocabbyTheme.mimo)

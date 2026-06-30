@@ -33,6 +33,7 @@
 		KIL00005000000000000B01 /* KiloOrganization.swift in Sources */ = {isa = PBXBuildFile; fileRef = KIL00006000000000000F01 /* KiloOrganization.swift */; };
 		PCR00001000000000000B01 /* ProviderCookieReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = PCR00002000000000000F01 /* ProviderCookieReader.swift */; };
 		CMC00001000000000000B01 /* CommandCodeProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CMC00002000000000000F01 /* CommandCodeProvider.swift */; };
+		FRM00001000000000000B01 /* FreemodelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FRM00002000000000000F01 /* FreemodelProvider.swift */; };
 		MIM00001000000000000B01 /* MiMoProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = MIM00002000000000000F01 /* MiMoProvider.swift */; };
 		CUR00001000000000000B01 /* CursorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CUR00002000000000000F01 /* CursorProvider.swift */; };
 		ALB00001000000000000B01 /* AlibabaProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALB00002000000000000F01 /* AlibabaProvider.swift */; };
@@ -163,6 +164,7 @@
 		KIL00006000000000000F01 /* KiloOrganization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Kilo/KiloOrganization.swift; sourceTree = "<group>"; };
 		PCR00002000000000000F01 /* ProviderCookieReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/Shared/ProviderCookieReader.swift; sourceTree = "<group>"; };
 		CMC00002000000000000F01 /* CommandCodeProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/CommandCodeProvider.swift; sourceTree = "<group>"; };
+		FRM00002000000000000F01 /* FreemodelProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/FreemodelProvider.swift; sourceTree = "<group>"; };
 		MIM00002000000000000F01 /* MiMoProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/MiMoProvider.swift; sourceTree = "<group>"; };
 		CUR00002000000000000F01 /* CursorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/CursorProvider.swift; sourceTree = "<group>"; };
 		ALB00002000000000000F01 /* AlibabaProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirdNion/Providers/AlibabaProvider.swift; sourceTree = "<group>"; };
@@ -511,6 +513,7 @@
 				KIL00005000000000000B01 /* KiloOrganization.swift in Sources */,
 				PCR00001000000000000B01 /* ProviderCookieReader.swift in Sources */,
 				CMC00001000000000000B01 /* CommandCodeProvider.swift in Sources */,
+				FRM00001000000000000B01 /* FreemodelProvider.swift in Sources */,
 				MIM00001000000000000B01 /* MiMoProvider.swift in Sources */,
 				CUR00001000000000000B01 /* CursorProvider.swift in Sources */,
 				ALB00001000000000000B01 /* AlibabaProvider.swift in Sources */,

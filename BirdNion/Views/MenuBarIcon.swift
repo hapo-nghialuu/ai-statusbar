@@ -171,6 +171,9 @@ enum MenuBarIconRenderer {
         case "commandcode":
             return scaled(NSImage(named: "CommandCodeLogo"), to: pointSize, isTemplate: false, tint: .white)
                 ?? fallbackLogo(pointSize)
+        case "freemodel":
+            return scaled(NSImage(named: "FreemodelLogo"), to: pointSize, isTemplate: false, tint: .white)
+                ?? fallbackLogo(pointSize)
         case "mimo":
             return scaled(NSImage(named: "MiMoLogo"), to: pointSize, isTemplate: false, tint: .white)
                 ?? fallbackLogo(pointSize)

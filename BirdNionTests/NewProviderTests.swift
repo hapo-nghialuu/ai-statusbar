@@ -136,4 +136,35 @@ final class NewProviderTests: XCTestCase {
         // Empty / unknown shape → empty array (not a crash).
         XCTAssertTrue(KiloOrganization.parse(data: Data("{}".utf8)).isEmpty)
     }
+
+    /// FreeModel returns two dollar budgets (5h + weekly) as cents. The parser
+    /// converts cents→USD, computes used%, and renders a "$used / $limit"
+    /// subtitle. Account label passes through unchanged.
+    func testFreemodelDollarWindows() {
+        let json = """
+        {"window5h":{"usedCents":2250,"limitCents":20000,"resetsAt":1782724407},
+         "windowWeek":{"usedCents":8,"limitCents":132000,"resetsAt":1783321795}}
+        """.data(using: .utf8)!
+        let s = FreemodelProvider._parseForTesting(usageData: json, accountLabel: "me@x.com")
+        XCTAssertNil(s.error)
+        XCTAssertEqual(s.accountLabel, "me@x.com")
+        XCTAssertEqual(s.windows.count, 2)
+
+        let fiveH = s.windows[0]
+        XCTAssertEqual(fiveH.label, "5 giờ")
+        XCTAssertEqual(fiveH.usedPct, 11)            // 2250/20000 = 11.25% → 11
+        XCTAssertEqual(fiveH.remainingPct, 89)
+        XCTAssertEqual(fiveH.subtitle, "$22.50 / $200.00")
+        XCTAssertNotNil(fiveH.resetDate)
+
+        let week = s.windows[1]
+        XCTAssertEqual(week.label, "Tuần")
+        XCTAssertEqual(week.usedPct, 0)              // 8/132000 ≈ 0.006% → 0
+        XCTAssertEqual(week.subtitle, "$0.08 / $1,320.00")
+
+        // Malformed payload → error, no windows.
+        let bad = FreemodelProvider._parseForTesting(usageData: Data("{}".utf8), accountLabel: nil)
+        XCTAssertNotNil(bad.error)
+        XCTAssertTrue(bad.windows.isEmpty)
+    }
 }

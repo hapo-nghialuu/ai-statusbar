@@ -110,7 +110,8 @@ enum BirdNionConfigStore {
             Provider(id: "opencode", enabled: false),
             Provider(id: "opencodego", enabled: false),
             Provider(id: "antigravity", enabled: false),
-            Provider(id: "bedrock", enabled: false)
+            Provider(id: "bedrock", enabled: false),
+            Provider(id: "freemodel", enabled: false)
         ])
     }()
 
