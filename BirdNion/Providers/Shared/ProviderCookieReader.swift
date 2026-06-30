@@ -83,10 +83,6 @@ enum ProviderCookieReader {
     private static func extractFromBrowsers(domain: String, requiredCookie: String?) -> String? {
         let client = BrowserCookieClient()
         let query = BrowserCookieQuery(domains: [domain])
-        // Remembered when a store has cookies for the domain but not the
-        // required session cookie — used as a last resort so behavior degrades
-        // to "best available" rather than nil if no browser carries the session.
-        var fallbackHeader: String?
 
         func tryBrowser(_ browser: Browser) -> String? {
             do {
@@ -112,14 +108,14 @@ enum ProviderCookieReader {
                     }
                     return nil
                 }
-                // Session-aware path: accept the first store that actually holds
-                // the session cookie; skip analytics-only stores in other browsers.
+                // Session-aware path: only accept a store that actually holds the
+                // required cookie. A browser carrying just stale analytics/Stripe
+                // cookies for this domain is skipped — we never return a header that
+                // is missing the required cookie (the parameter name promises it is
+                // present, so callers may rely on that).
                 for store in stores where !store.isEmpty {
                     if store.contains(where: { $0.name == requiredCookie }) {
                         return buildCookieHeader(from: store)
-                    }
-                    if fallbackHeader == nil {
-                        fallbackHeader = buildCookieHeader(from: store)
                     }
                 }
                 return nil
@@ -136,9 +132,8 @@ enum ProviderCookieReader {
         for browser in Browser.defaultImportOrder where browser != .safari {
             if let header = tryBrowser(browser) { return header }
         }
-        // No store carried the required cookie; return the fallback (nil on the
-        // legacy path). The caller validates and rejects an incomplete header.
-        return fallbackHeader
+        // No browser carried the required cookie (or any cookie on the legacy path).
+        return nil
     }
 
     // MARK: - Cookie header builder
