@@ -94,6 +94,8 @@ Scripts/release.sh 0.5.2
 > 🔒 **Hapo bảo mật:** endpoint thật không được commit. Release build lấy
 > endpoint từ `Scripts/dev-env.sh` (gitignored) rồi bake vào Info.plist qua
 > build settings. User chỉ nhập `Token` trong Settings → AIHub.
+> Script kiểm tra lại `HapoBaseURL`, `HapoMeURL` và `HapoAuthTemplate` trong
+> bundle trước khi đóng gói; release dừng nếu giá trị bị thiếu hoặc biến đổi.
 
 ### Debug/local build có Hapo AI Hub
 

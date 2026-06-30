@@ -67,6 +67,15 @@ if [[ -f "$DEV_ENV" ]]; then
   source "$DEV_ENV"
 fi
 
+HAPO_AUTH_TEMPLATE_VALUE="${HAPO_AUTH_TEMPLATE:-}"
+if [[ -z "$HAPO_AUTH_TEMPLATE_VALUE" ]]; then
+  HAPO_AUTH_TEMPLATE_VALUE='Bearer {token}'
+fi
+if [[ "$HAPO_AUTH_TEMPLATE_VALUE" != *'{token}'* ]]; then
+  echo "HAPO_AUTH_TEMPLATE must contain the literal {token} placeholder." >&2
+  exit 1
+fi
+
 if [[ "$SKIP_BUILD" -eq 0 && "$DRY_RUN" -eq 0 && -z "${HAPO_BASE_URL:-}" ]]; then
   echo "HAPO_BASE_URL is required for release builds. Set it in Scripts/dev-env.sh." >&2
   exit 1
@@ -115,7 +124,7 @@ if [[ "$SKIP_BUILD" -eq 0 ]]; then
       -derivedDataPath "$REPO_ROOT/build/DerivedData" \
       HAPO_BASE_URL="${HAPO_BASE_URL:-}" \
       HAPO_ME_URL="${HAPO_ME_URL:-}" \
-      HAPO_AUTH_TEMPLATE="${HAPO_AUTH_TEMPLATE:-Bearer {token}}" \
+      HAPO_AUTH_TEMPLATE="$HAPO_AUTH_TEMPLATE_VALUE" \
       build
 fi
 
@@ -134,9 +143,30 @@ echo "==> Packaging"
 run rm -rf "$DESKTOP/BirdNion.app"
 run cp -R "$BUILT_APP" "$DESKTOP/BirdNion.app"
 if [[ "$DRY_RUN" -eq 0 ]]; then
-  ACTUAL_VER=$(plutil -extract CFBundleShortVersionString raw "$DESKTOP/BirdNion.app/Contents/Info.plist")
+  BUILT_INFO_PLIST="$DESKTOP/BirdNion.app/Contents/Info.plist"
+  ACTUAL_VER=$(plutil -extract CFBundleShortVersionString raw "$BUILT_INFO_PLIST")
   if [[ "$ACTUAL_VER" != "$VERSION" ]]; then
     echo "Bundle version mismatch: requested $VERSION, got $ACTUAL_VER" >&2
+    exit 1
+  fi
+
+  ACTUAL_HAPO_BASE_URL=$(plutil -extract HapoBaseURL raw "$BUILT_INFO_PLIST" 2>/dev/null || true)
+  ACTUAL_HAPO_ME_URL=$(plutil -extract HapoMeURL raw "$BUILT_INFO_PLIST" 2>/dev/null || true)
+  ACTUAL_HAPO_AUTH_TEMPLATE=$(plutil -extract HapoAuthTemplate raw "$BUILT_INFO_PLIST" 2>/dev/null || true)
+  if [[ -z "$ACTUAL_HAPO_BASE_URL" ]]; then
+    echo "Built app is missing HapoBaseURL." >&2
+    exit 1
+  fi
+  if [[ -n "${HAPO_BASE_URL:-}" && "$ACTUAL_HAPO_BASE_URL" != "$HAPO_BASE_URL" ]]; then
+    echo "Built app HapoBaseURL does not match the release environment." >&2
+    exit 1
+  fi
+  if [[ -n "${HAPO_ME_URL:-}" && "$ACTUAL_HAPO_ME_URL" != "$HAPO_ME_URL" ]]; then
+    echo "Built app HapoMeURL does not match the release environment." >&2
+    exit 1
+  fi
+  if [[ "$ACTUAL_HAPO_AUTH_TEMPLATE" != "$HAPO_AUTH_TEMPLATE_VALUE" ]]; then
+    echo "Built app HapoAuthTemplate does not match the release environment." >&2
     exit 1
   fi
 fi
