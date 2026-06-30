@@ -1,6 +1,22 @@
 import Foundation
 import SweetCookieKit
 
+// MARK: - BrowserCookieSerialGate
+
+/// App-wide serialization for **all** SweetCookieKit browser reads.
+///
+/// SweetCookieKit's reader is not safe to drive from multiple threads at once
+/// (concurrent SQLite + keychain decryption corrupts the heap → `EXC_BREAKPOINT`
+/// "memory corruption of free block"). `QuotaService.refresh` fans every
+/// provider's `fetch()` out across a `TaskGroup`, so Claude (`ClaudeWebCookieReader`)
+/// and the cookie providers (`ProviderCookieReader`) used to read browsers
+/// concurrently behind two *independent* locks. They must share **one** lock so
+/// only a single browser read runs at a time. The lock is held only for the
+/// cookie-store read, never across network I/O.
+enum BrowserCookieSerialGate {
+    static let lock = NSLock()
+}
+
 // MARK: - ProviderCookieReader
 
 /// Generic browser-cookie reader for providers that authenticate via session cookies.
@@ -19,9 +35,6 @@ enum ProviderCookieReader {
     /// UserDefaults key prefix; append the domain to avoid key collisions.
     private static let deniedUntilKeyPrefix = "providerCookieDeniedUntil_"
 
-    /// Lock serialises browser reads so parallel provider fetches don't race.
-    private static let gateLock = NSLock()
-
     // MARK: - Public API
 
     /// Returns a `Cookie:` header value for `domain`, built from all cookie records
@@ -37,16 +50,21 @@ enum ProviderCookieReader {
     /// Keychain "<Browser> Safe Storage" prompt can appear (and the user can pick
     /// "Always Allow"). Once granted, SweetCookieKit caches the key so there's no
     /// repeat prompt; the cooldown is only recorded for telemetry/back-off hints.
-    static func cookieHeader(domain: String) -> String? {
-        gateLock.lock()
-        defer { gateLock.unlock() }
-        return extractFromBrowsers(domain: domain)
+    /// - Parameter requiredCookie: when set (e.g. a session cookie name), only a
+    ///   browser store that actually contains that cookie is accepted; stores
+    ///   that merely have *some* cookies for the domain (stale analytics/Stripe
+    ///   leftovers in another browser) are skipped. nil keeps the legacy
+    ///   "first store with any cookie wins" behavior.
+    static func cookieHeader(domain: String, requiredCookie: String? = nil) -> String? {
+        BrowserCookieSerialGate.lock.lock()
+        defer { BrowserCookieSerialGate.lock.unlock() }
+        return extractFromBrowsers(domain: domain, requiredCookie: requiredCookie)
     }
 
     /// Resolves the cookie header honoring the provider's "cookie source"
     /// preference (UserDefaults `<providerID>CookieSource`: auto/manual/off).
     /// `manual` reads a user-pasted Cookie header from `<providerID>ManualCookie`.
-    static func resolvedCookieHeader(providerID: String, domain: String) -> String? {
+    static func resolvedCookieHeader(providerID: String, domain: String, requiredCookie: String? = nil) -> String? {
         let source = UserDefaults.standard.string(forKey: "\(providerID)CookieSource") ?? "auto"
         switch source {
         case "off":
@@ -56,56 +74,85 @@ enum ProviderCookieReader {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             return (raw?.isEmpty ?? true) ? nil : raw
         default:
-            return cookieHeader(domain: domain)
+            return cookieHeader(domain: domain, requiredCookie: requiredCookie)
         }
     }
 
     // MARK: - Browser iteration
 
-    private static func extractFromBrowsers(domain: String) -> String? {
+    private static func extractFromBrowsers(domain: String, requiredCookie: String?) -> String? {
         let client = BrowserCookieClient()
         let query = BrowserCookieQuery(domains: [domain])
+        // Remembered when a store has cookies for the domain but not the
+        // required session cookie — used as a last resort so behavior degrades
+        // to "best available" rather than nil if no browser carries the session.
+        var fallbackHeader: String?
+
+        func tryBrowser(_ browser: Browser) -> String? {
+            do {
+                let storeRecords = try client.records(matching: query, in: browser)
+                // Snapshot name+value into freshly-allocated Strings *immediately*,
+                // before any further SweetCookieKit access. SweetCookieKit's records
+                // buffer can be freed/corrupted underneath us (use-after-free in its
+                // Chromium cookie decryption → "memory corruption of free block" crash
+                // in String append). Round-tripping through UTF8 bytes detaches every
+                // downstream String from that storage so nothing afterwards touches
+                // the dependency's (possibly freed) memory.
+                let stores: [[CookiePair]] = storeRecords.map { store in
+                    store.records.map { rec in
+                        CookiePair(
+                            name: String(decoding: Array(rec.name.utf8), as: UTF8.self),
+                            value: String(decoding: Array(rec.value.utf8), as: UTF8.self))
+                    }
+                }
+                guard let requiredCookie else {
+                    // Legacy path: first store with any cookie wins.
+                    if let first = stores.first, !first.isEmpty {
+                        return buildCookieHeader(from: first)
+                    }
+                    return nil
+                }
+                // Session-aware path: accept the first store that actually holds
+                // the session cookie; skip analytics-only stores in other browsers.
+                for store in stores where !store.isEmpty {
+                    if store.contains(where: { $0.name == requiredCookie }) {
+                        return buildCookieHeader(from: store)
+                    }
+                    if fallbackHeader == nil {
+                        fallbackHeader = buildCookieHeader(from: store)
+                    }
+                }
+                return nil
+            } catch let error as BrowserCookieError {
+                recordCooldownIfNeeded(error, domain: domain)
+            } catch {
+                // notFound / loadFailed — browser not installed or store unreadable; skip silently.
+            }
+            return nil
+        }
 
         // Safari first — no Keychain prompt needed.
-        if let header = tryBrowser(.safari, client: client, query: query, domain: domain) {
-            return header
+        if let header = tryBrowser(.safari) { return header }
+        for browser in Browser.defaultImportOrder where browser != .safari {
+            if let header = tryBrowser(browser) { return header }
         }
-
-        let remaining = Browser.defaultImportOrder.filter { $0 != .safari }
-        for browser in remaining {
-            if let header = tryBrowser(browser, client: client, query: query, domain: domain) {
-                return header
-            }
-        }
-        return nil
-    }
-
-    private static func tryBrowser(
-        _ browser: Browser,
-        client: BrowserCookieClient,
-        query: BrowserCookieQuery,
-        domain: String
-    ) -> String? {
-        do {
-            let storeRecords = try client.records(matching: query, in: browser)
-            // Use the first store that has at least one cookie.
-            if let first = storeRecords.first, !first.records.isEmpty {
-                return buildCookieHeader(from: first.records)
-            }
-        } catch let error as BrowserCookieError {
-            recordCooldownIfNeeded(error, domain: domain)
-        } catch {
-            // notFound / loadFailed — browser not installed or store unreadable; skip silently.
-        }
-        return nil
+        // No store carried the required cookie; return the fallback (nil on the
+        // legacy path). The caller validates and rejects an incomplete header.
+        return fallbackHeader
     }
 
     // MARK: - Cookie header builder
 
-    private static func buildCookieHeader(from records: [BrowserCookieRecord]) -> String {
-        records
-            .map { "\($0.name)=\($0.value)" }
-            .joined(separator: "; ")
+    /// A detached snapshot of a single cookie's name+value. Holds no reference to
+    /// SweetCookieKit storage, so it is safe to use after the source records array
+    /// has been (potentially) freed/corrupted by the dependency.
+    private struct CookiePair {
+        let name: String
+        let value: String
+    }
+
+    private static func buildCookieHeader(from records: [CookiePair]) -> String {
+        records.map { "\($0.name)=\($0.value)" }.joined(separator: "; ")
     }
 
     // MARK: - 6-hour cooldown gate

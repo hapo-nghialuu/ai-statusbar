@@ -20,13 +20,6 @@ enum ClaudeWebCookieReader {
     /// Cooldown gate key. Must not collide with CodexBar's key.
     private static let deniedUntilKey = "claudeBrowserCookieDeniedUntil"
 
-    // MARK: - Serialization gate (actor)
-
-    /// Serializes browser reads so parallel fetches don't trigger multiple
-    /// Keychain prompts simultaneously. A plain lock (not an actor) keeps the
-    /// `sessionKeyInfo` API synchronous.
-    private static let gateLock = NSLock()
-
     // MARK: - Public API
 
     /// Auto-detect the claude.ai sessionKey across browsers.
@@ -44,8 +37,10 @@ enum ClaudeWebCookieReader {
             return nil
         }
 
-        gateLock.lock()
-        defer { gateLock.unlock() }
+        // Shared with ProviderCookieReader — SweetCookieKit is not safe to drive
+        // concurrently, and QuotaService fans provider fetches out in parallel.
+        BrowserCookieSerialGate.lock.lock()
+        defer { BrowserCookieSerialGate.lock.unlock() }
         return try extractFromBrowsers()
     }
 
@@ -90,11 +85,20 @@ enum ClaudeWebCookieReader {
         do {
             let storeRecords = try client.records(matching: query, in: browser)
             for storeRecord in storeRecords {
-                let pairs = storeRecord.records.map { (name: $0.name, value: $0.value) }
+                // Snapshot name+value into freshly-allocated Strings *immediately*,
+                // before any further SweetCookieKit access. SweetCookieKit's records
+                // buffer can be freed/corrupted underneath us (use-after-free in its
+                // Chromium cookie decryption → "memory corruption of free block" crash
+                // inside String append). Round-tripping through UTF8 bytes detaches
+                // every String from that storage so nothing afterwards touches it.
+                let pairs: [(name: String, value: String)] = storeRecord.records.map { rec in
+                    (name: String(decoding: Array(rec.name.utf8), as: UTF8.self),
+                     value: String(decoding: Array(rec.value.utf8), as: UTF8.self))
+                }
                 if let key = findSessionKey(in: pairs) {
                     // Build a cookie header from all cookies in this store
                     // (some endpoints validate additional cookies alongside sessionKey).
-                    let header = buildCookieHeader(from: storeRecord.records)
+                    let header = buildCookieHeader(from: pairs)
                     return SessionKeyInfo(key: key, cookieHeader: header)
                 }
             }
@@ -115,7 +119,7 @@ enum ClaudeWebCookieReader {
         return nil
     }
 
-    private static func buildCookieHeader(from records: [BrowserCookieRecord]) -> String {
+    private static func buildCookieHeader(from records: [(name: String, value: String)]) -> String {
         records
             .map { "\($0.name)=\($0.value)" }
             .joined(separator: "; ")
