@@ -387,16 +387,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func openSettings(_ sender: AnyObject?) {
-        // Dismiss the transient popover, bring the app forward, then ask SwiftUI
-        // to present its `Settings` scene (HiddenWindowView listens for
-        // `.openSettingsWindow` and calls the openSettings environment action).
-        // We deliberately stay an `.accessory` (menu-bar-only) app: promoting to
-        // `.regular` kept the app permanently active, which stopped the
-        // nonactivating popover from dismissing on click-outside. The Settings
-        // scene presents fine for an accessory app via `NSApp.activate`.
+        // Dismiss the transient popover, bring the app forward, then ask the
+        // responder chain to show SwiftUI's native Settings scene. This avoids
+        // keeping a hidden WindowGroup alive just to access the openSettings
+        // environment action.
         hidePanel()
         NSApp.activate(ignoringOtherApps: true)
-        NotificationCenter.default.post(name: .openSettingsWindow, object: nil)
+        if !NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: sender) {
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: sender)
+        }
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
     }
 
     func applicationWillTerminate(_ notification: Notification) {
