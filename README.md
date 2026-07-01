@@ -20,7 +20,7 @@ BirdNion is inspired by [CodexBar](https://github.com/steipete/CodexBar). It reu
 - **Plan around resets.** Per-provider 5-hour, weekly, monthly, credit, and budget windows with reset countdowns.
 - **See spend and cost.** Claude local JSONL scans, Claude Admin API charts, Codex credits, OpenRouter balances, Bedrock budgets, and provider-specific cost/credit summaries where available.
 - **Configure agent sources.** Pick OAuth, CLI, browser cookies, API keys, AWS credentials, local app files, or provider apps from Settings per provider.
-- **Keep the menu bar useful.** Provider icons rotate in the bar; Kiro, Codex, Gemini, Bedrock, and other providers can choose which metric appears.
+- **Keep the menu bar quiet.** The bar shows the bird logo by default, or an optional lowest-active-quota percent with the matching provider logo.
 - **Privacy-first.** BirdNion reuses existing sessions and explicit config. It does not store passwords or crawl your disk.
 
 ## Install
@@ -136,13 +136,13 @@ Open to more providers when they fit the existing `QuotaProvider` model.
 
 ## Icon & Screenshot
 
-The menu-bar icon is a tiny rotating quota meter. Provider frames use each provider's logo and the selected usage metric; loading/error states stay visible instead of silently disappearing.
+The menu-bar icon is the BirdNion bird by default. When "Show percent in menu bar" is enabled, the bar shows the lowest active quota percent with that provider's logo.
 
 ![BirdNion preview](docs/social.png)
 
 ## Features
 
-- Multi-provider menu bar with provider toggles and drag-to-reorder Settings.
+- Optional lowest-provider menu-bar percent with provider toggles and drag-to-reorder Settings.
 - Provider-specific usage meters with reset countdowns.
 - Progressive refresh: each provider publishes as soon as its fetch completes.
 - Last-known data stays visible while refreshes are in flight.
@@ -170,6 +170,7 @@ The menu-bar icon is a tiny rotating quota meter. Provider frames use each provi
 | Antigravity OAuth accounts | `~/.config/birdnion/antigravity-oauth.json` |
 | Copilot OAuth accounts | `~/.config/birdnion/copilot-accounts.json` |
 | Browser/manual cookie source | `UserDefaults` keys `<providerID>CookieSource`, `<providerID>ManualCookie` |
+| Menu-bar percent display | `UserDefaults.showPercentInMenuBar` |
 | Menu-bar visibility | `UserDefaults.menuBarVisibility.<id>` |
 | Per-provider refresh interval | `UserDefaults.refreshInterval.<id>` |
 

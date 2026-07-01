@@ -757,8 +757,8 @@ struct ActionRow: View {
 // MARK: - Menu Bar Visibility Toggle
 
 /// Toggle that controls whether this provider appears in the macOS menu
-/// bar rotation. When the toggle is on, the provider's frame cycles
-/// through the status bar; when off, it's hidden from the rotation.
+/// bar percent slot. When the toggle is on, the provider can drive the
+/// lowest-quota menu-bar percent; when off, it's excluded from that slot.
 /// Default state is read from `MenuBarVisibility` (UserDefaults-backed).
 ///
 /// A small icon on the left reflects the provider's current fetch health

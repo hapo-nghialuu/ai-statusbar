@@ -43,8 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Pixels the panel is nudged up toward the menu bar from its anchor.
     private let topNudge: CGFloat = 10
 
-    // Menu bar rotation: the bird, then one frame per provider, advanced
-    // by a timer.
+    // Menu bar frame: either the bird, or one provider percent frame when
+    // enabled in Display settings.
     private var frames: [MenuBarIconRenderer.Frame] = [.bird]
     private var frameIndex: Int = 0
     private var rotationTimer: Timer?
@@ -55,22 +55,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self, selector: #selector(openSettings(_:)),
             name: .openSettings, object: nil
         )
-        // Listen for menu-bar visibility toggles so the rotation rebuilds
+        // Listen for menu-bar visibility toggles so the menu-bar frame rebuilds
         // immediately when the user flips a provider off the bar.
         NotificationCenter.default.addObserver(
             self, selector: #selector(menuBarVisibilityDidChange(_:)),
             name: .menuBarVisibilityChanged, object: nil
         )
         // Listen for provider-list changes (reorder / toggle from the
-        // Settings sidebar) so the popover + menu-bar rotation pick up
+        // Settings sidebar) so the popover + menu-bar frame pick up
         // the new order without an app restart.
         NotificationCenter.default.addObserver(
             self, selector: #selector(providersDidChange(_:)),
             name: .birdnionProvidersChanged, object: nil
         )
 
-        // Status bar item — variable length so the title text fits; the
-        // icon is the bundled bird and the title is the rotating percentage.
+        // Status bar item — variable length so the optional percent text fits.
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
             button.target = self
@@ -153,7 +152,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.refreshLocalizedChrome() }
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshLocalizedChrome()
+                self.updateFrames(from: self.services.quotaService.displayStatuses)
+            }
             .store(in: &cancellables)
 
         installClickOutsideMonitor()
@@ -292,15 +295,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hidePanel()
     }
 
-    // MARK: - Menu bar rotation
+    // MARK: - Menu bar frame
 
-    /// How long each frame (bird, or one provider) is shown before advancing.
+    /// Retained as a fallback if future settings re-enable multiple frames.
     private let frameDuration: TimeInterval = 5.0
 
-    /// Recompute the rotation from the latest statuses and (re)start the
-    /// timer. The bird is always the first frame; each provider with quota
-    /// data is one frame after it. With a single frame (just the bird, e.g.
-    /// while loading) the timer is stopped — there is nothing to rotate.
+    /// Recompute the menu-bar frame from the latest statuses. With the percent
+    /// setting off, or with no active quota data, this resolves to the bird.
     private func updateFrames(from statuses: [ProviderStatus]) {
         frames = MenuBarIconRenderer.frames(from: statuses)
         if frameIndex >= frames.count { frameIndex = 0 }
@@ -357,7 +358,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc func menuBarVisibilityDidChange(_ notification: Notification) {
-        // Rebuild the rotation with the new visibility state and reset the
+        // Rebuild the menu-bar frame with the new visibility state and reset the
         // frame pointer so the user sees the change immediately.
         updateFrames(from: services.quotaService.displayStatuses)
         frameIndex = 0
@@ -366,7 +367,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func providersDidChange(_ notification: Notification) {
         // Re-read providers.json and rebuild the QuotaService provider list
-        // so popover tabs + menu-bar rotation reflect the new order, then
+        // so popover tabs + menu-bar percent candidates reflect the new order, then
         // refresh statuses so the tab data is fresh too.
         services.rebuildProviders()
         Task { @MainActor in

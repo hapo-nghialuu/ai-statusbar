@@ -1,8 +1,6 @@
 import SwiftUI
 
-/// Display settings: how icons are merged/rotated in the menu bar.
-/// Today the renderer always uses a single bird icon — these settings are
-/// persisted but have no visual effect yet (YAGNI wiring).
+/// Display settings for the status item in the macOS menu bar.
 struct DisplayPane: View {
     @EnvironmentObject var settings: SettingsStore
 
@@ -13,24 +11,12 @@ struct DisplayPane: View {
                 footer: LocalizedStringKey(L10n.t("settings.display.footer", settings.appLanguage))
             ) {
                 SettingsLabeledRow(
-                    title: L10n.t("settings.mergeIcons.title", settings.appLanguage),
-                    subtitle: L10n.t("settings.mergeIcons.subtitle", settings.appLanguage)
+                    title: L10n.t("settings.showPercentInMenuBar.title", settings.appLanguage),
+                    subtitle: L10n.t("settings.showPercentInMenuBar.subtitle", settings.appLanguage)
                 ) {
-                    Toggle("", isOn: $settings.mergeIcons).labelsHidden().toggleStyle(.switch)
-                }
-
-                SettingsRowDivider()
-
-                SettingsLabeledRow(
-                    title: L10n.t("settings.switcherShowsIcons.title", settings.appLanguage),
-                    subtitle: settings.mergeIcons
-                        ? L10n.t("settings.switcherShowsIcons.subtitle.on", settings.appLanguage)
-                        : L10n.t("settings.switcherShowsIcons.subtitle.off", settings.appLanguage)
-                ) {
-                    Toggle("", isOn: $settings.switcherShowsIcons)
+                    Toggle("", isOn: $settings.showPercentInMenuBar)
                         .labelsHidden()
                         .toggleStyle(.switch)
-                        .disabled(!settings.mergeIcons)
                 }
             }
         }

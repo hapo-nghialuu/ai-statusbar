@@ -121,6 +121,37 @@ final class NewProviderTests: XCTestCase {
         XCTAssertEqual(MenuBarIconRenderer.percentTitle(for: [-4, 120]), "0%  100%")
     }
 
+    func testMenuBarFramesFallBackToBirdWhenPercentHiddenOrNoQuota() {
+        let status = ProviderStatus(
+            id: "hapo", displayName: "AI Hub",
+            windows: [QuotaWindow(label: "Week", usedPct: 24, remainingPct: 76)],
+            lastUpdated: Date())
+        XCTAssertEqual(
+            MenuBarIconRenderer.frames(from: [status], showPercent: false, visibility: { _ in true }),
+            [.bird])
+        XCTAssertEqual(
+            MenuBarIconRenderer.frames(
+                from: [ProviderStatus(id: "hapo", displayName: "AI Hub", windows: [], lastUpdated: Date())],
+                showPercent: true,
+                visibility: { _ in true }),
+            [.bird])
+    }
+
+    func testMenuBarFramesShowOnlyLowestActiveProviderPercent() {
+        let codex = ProviderStatus(
+            id: "codex", displayName: "Codex",
+            windows: [QuotaWindow(label: "5 hours", usedPct: 7, remainingPct: 93)],
+            lastUpdated: Date())
+        let hapo = ProviderStatus(
+            id: "hapo", displayName: "AI Hub",
+            windows: [QuotaWindow(label: "Week", usedPct: 24, remainingPct: 76)],
+            lastUpdated: Date())
+
+        XCTAssertEqual(
+            MenuBarIconRenderer.frames(from: [codex, hapo], showPercent: true, visibility: { _ in true }),
+            [.provider(id: "hapo", name: "AI Hub", percents: [76], text: nil)])
+    }
+
     /// Kilo org list comes back as a tRPC batch whose `json` is a DIRECT array
     /// of orgs (not `{organizations:[...]}`). The REST profile shape is also
     /// accepted as a fallback.

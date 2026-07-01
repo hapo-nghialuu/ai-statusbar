@@ -169,7 +169,7 @@ BirdNion/
   Views/
     PopoverView.swift                # container
     QuotaPanel.swift                 # tabs + provider card + actions
-    MenuBarIcon.swift                # status bar rotation renderer
+    MenuBarIcon.swift                # status bar bird/lowest-percent renderer
     MenuBarVisibility.swift          # UserDefaults-backed show/hide
     Settings/
       ProvidersPane.swift            # sidebar + detail
@@ -229,7 +229,7 @@ Scripts/
 - [x] Search box + active-first sort
 - [x] Menu-bar visibility toggle per provider
 - [x] Ad-hoc signed, Gatekeeper auto-strip qua Homebrew cask postflight
-- [x] `xcodebuild` build clean, 102 tests pass
+- [x] `xcodebuild` build clean, 111 tests pass
 - [x] Local token scanner: 30-day chart for Claude usage
 - [x] Release pipeline (`Scripts/release.sh`) → tap → brew install
 
@@ -242,7 +242,7 @@ Scripts/
 | Local CodexBarCore SPM (path-based) | Tận dụng `ClaudeWebAPIFetcher` + `RateWindow` battle-tested |
 | Seed pending with old statuses on refresh | User không thấy flash empty khi provider fetch chậm |
 | Per-provider refresh interval | Provider chậm/rate-limited poll ít hơn, user tự chỉnh |
-| Menu-bar visibility toggle per provider | User ẩn provider không quan tâm khỏi rotation |
+| Menu-bar visibility toggle per provider | User loại provider không quan tâm khỏi ứng viên % thấp nhất |
 | Cask filename: `BirdNion-${version}.zip` (no v prefix) | GitHub release-asset upload cache trả 404 BlobNotFound với `v${version}.zip` |
 
 ## 10. Open questions / future

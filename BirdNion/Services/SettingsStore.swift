@@ -1,13 +1,20 @@
 import SwiftUI
 import ServiceManagement
 
+enum MenuBarPercentDisplay {
+    static let defaultsKey = "showPercentInMenuBar"
+
+    static var isEnabled: Bool {
+        UserDefaults.standard.bool(forKey: defaultsKey)
+    }
+}
+
 /// Central user-preferences store. Each property uses `@AppStorage` so SwiftUI
 /// views bind directly and values persist in UserDefaults automatically.
 ///
 /// Real wiring: applyLanguage (writes AppleLanguages), setLaunchAtLogin
-/// (SMAppService.mainApp), pushRefreshInterval (QuotaService). The remaining
-/// 5 settings are persisted; their UI controls are wired in the pane views
-/// (YAGNI — they have no code that reads them yet).
+/// (SMAppService.mainApp), pushRefreshInterval (QuotaService), and menu-bar
+/// percent visibility (AppDelegate/MenuBarIconRenderer).
 @MainActor
 final class SettingsStore: ObservableObject {
     enum Language: String, CaseIterable, Identifiable {
@@ -56,6 +63,7 @@ final class SettingsStore: ObservableObject {
     @AppStorage(QuotaWarnConfig.level1Key) var quotaWarnLevel1: Int = 50
     @AppStorage(QuotaWarnConfig.level2Key) var quotaWarnLevel2: Int = 20
     @AppStorage("hidePersonalInfo") var hidePersonalInfo: Bool = false
+    @AppStorage(MenuBarPercentDisplay.defaultsKey) var showPercentInMenuBar: Bool = false
     @AppStorage("mergeIcons") var mergeIcons: Bool = true
     @AppStorage("switcherShowsIcons") var switcherShowsIcons: Bool = true
     /// MiniMax API host region: "io" (global) or "com" (mainland China).
