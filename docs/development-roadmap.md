@@ -24,7 +24,7 @@ BirdNion (fork/evolution của ai-statusbar) — macOS menu-bar app tracking AI 
 - [x] `QuotaPanel` (CodexBar-style two-tab layout: tabs + provider content)
 - [x] `ProviderRow` + `QuotaBar` (progress % with reset countdown)
 - [x] Icon menu bar rotates through enabled providers (bird → providers → bird)
-- [x] `ProvidersPane` settings: per-provider token entry, sidebar reorder via drag-drop
+- [x] `ProvidersPane` settings: per-provider token entry, live animated sidebar reorder via drag-drop
 - [x] Search box + active-first sort in settings sidebar
 - [x] Per-provider refresh interval picker (Mặc định chung / 30s / 1m / 2m / 5m / 10m / 30m)
 
@@ -45,7 +45,7 @@ BirdNion (fork/evolution của ai-statusbar) — macOS menu-bar app tracking AI 
 
 ## ✅ Phase 4 — Verify & polish
 - [x] `xcodebuild` build clean (Debug + Release)
-- [x] 102 unit tests passing
+- [x] 108 unit tests passing
 - [x] Per-provider loading state (placeholder + spinner)
 - [x] Ad-hoc signed, Gatekeeper auto-strip via Homebrew cask postflight
 - [x] Edge cases handled: OAuth 401, no cookies, missing CLI, slow providers
@@ -67,7 +67,7 @@ BirdNion (fork/evolution của ai-statusbar) — macOS menu-bar app tracking AI 
 - [ ] Multiple workspace switcher (Codex multi-account already done)
 - [ ] `ClaudePlan` rewrite to match CodexBar's exact subscription type logic
 - [ ] Migrate to `MenuBarExtra` SwiftUI scene (currently using NSPopover-style)
-- [ ] Localization (currently Vietnamese-first)
+- [x] Vietnamese/English UI localization
 
 ## Recent milestones
 

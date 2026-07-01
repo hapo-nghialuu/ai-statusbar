@@ -138,13 +138,21 @@ struct ProvidersPane: View {
             // Scrollable provider list — the roster can hold 20+ providers, so
             // it must scroll independently (search field stays pinned above).
             ScrollView {
-                VStack(spacing: 6) {
+                VStack(spacing: 0) {
                     ForEach(Array(visibleRows.enumerated()), id: \.element.id) { idx, row in
                         sidebarRow(row, position: idx)
                         if row.id != visibleRows.last?.id {
                             Divider()
                                 .overlay(SettingsTheme.border.opacity(0.72))
                                 .padding(.leading, 44)
+                                .frame(height: 7)
+                                .contentShape(Rectangle())
+                                .onDrop(
+                                    of: [Self.providerDragType],
+                                    delegate: SidebarDropCompletionDelegate(
+                                        draggedProviderId: $draggedRowId,
+                                        dropTargetRowId: $dropTargetRowId,
+                                        finish: finishRowMove))
                         }
                     }
                 }
@@ -162,31 +170,61 @@ struct ProvidersPane: View {
         )
     }
 
-    /// Reorder `rows` so the dragged id sits at `targetIndex` in the
-    /// currently visible list. Mirrors a Finder list drop: the row
-    /// currently at `targetIndex` shifts down (or up) to make space.
-    /// Posts `.birdnionRefresh` so QuotaService rebuilds its provider
-    /// list and the menu-bar popover reorders its tabs.
-    private func moveRow(draggedId: String, toVisibleIndex targetIndex: Int) {
-        guard let fromVisible = visibleRows.firstIndex(where: { $0.id == draggedId }) else { return }
-        let fromReal = rows.firstIndex(where: { $0.id == draggedId }) ?? fromVisible
-        let item = rows.remove(at: fromReal)
-        // visibleRows was recomputed after removal, so re-derive target by id.
-        let visibleIds = visibleRows.map(\.id)
-        let newVisibleIndex = min(max(0, targetIndex), visibleIds.count)
-        let targetId = visibleIds.indices.contains(newVisibleIndex)
-            ? visibleIds[newVisibleIndex]
-            : nil
-        let insertReal: Int
-        if let targetId, let r = rows.firstIndex(where: { $0.id == targetId }) {
-            insertReal = r
-        } else {
-            insertReal = rows.endIndex
+    /// Pure reorder helper used by the live drag preview and unit tests. The
+    /// visible order can differ from storage order because enabled providers
+    /// are grouped first, so direction is derived from `visibleIDs` while the
+    /// actual item is moved in the complete provider array.
+    static func reorderedProviders(
+        _ providers: [BirdNionConfigStore.Provider],
+        visibleIDs: [String],
+        draggedID: String,
+        targetIndex: Int
+    ) -> [BirdNionConfigStore.Provider] {
+        guard let fromVisible = visibleIDs.firstIndex(of: draggedID),
+              visibleIDs.indices.contains(targetIndex)
+        else { return providers }
+
+        let targetID = visibleIDs[targetIndex]
+        guard targetID != draggedID,
+              let fromReal = providers.firstIndex(where: { $0.id == draggedID })
+        else { return providers }
+
+        var reordered = providers
+        let item = reordered.remove(at: fromReal)
+        guard let targetReal = reordered.firstIndex(where: { $0.id == targetID }) else {
+            return providers
         }
-        rows.insert(item, at: insertReal)
+        let movingDown = fromVisible < targetIndex
+        let insertionIndex = movingDown ? targetReal + 1 : targetReal
+        reordered.insert(item, at: min(insertionIndex, reordered.endIndex))
+        return reordered
+    }
+
+    /// Move rows as soon as the pointer enters a sibling row. Persistence and
+    /// provider rebuild happen only once in `finishRowMove`, when the user
+    /// drops, so the animation stays responsive.
+    private func previewRowMove(draggedId: String, toVisibleIndex targetIndex: Int) {
+        let reordered = Self.reorderedProviders(
+            rows,
+            visibleIDs: visibleRows.map(\.id),
+            draggedID: draggedId,
+            targetIndex: targetIndex)
+        guard reordered != rows else { return }
+        withAnimation(.easeInOut(duration: 0.14)) {
+            rows = reordered
+        }
+    }
+
+    private func finishRowMove() {
+        let originalOrder = dragStartRows?.map(\.id)
+        guard originalOrder != rows.map(\.id) else {
+            dragStartRows = nil
+            return
+        }
         saveAll()
         NotificationCenter.default.post(name: .birdnionProvidersChanged, object: nil)
         NotificationCenter.default.post(name: .birdnionRefresh, object: nil)
+        dragStartRows = nil
     }
 
     /// Search box at the top of the sidebar. Magnifying glass icon + clear
@@ -230,6 +268,7 @@ struct ProvidersPane: View {
     private func sidebarRow(_ row: BirdNionConfigStore.Provider, position: Int) -> some View {
         let isSelected = row.id == selectedID
         let isHovered = row.id == hoveredRowId
+        let isDragged = row.id == draggedRowId
         let isDropTarget = row.id == dropTargetRowId && row.id != draggedRowId
         return HStack(spacing: 7) {
             Image(systemName: "line.3.horizontal")
@@ -237,7 +276,8 @@ struct ProvidersPane: View {
                 .foregroundStyle(isHovered || isDropTarget
                                  ? SettingsTheme.accent
                                  : SettingsTheme.tertiary)
-                .frame(width: 12, height: 22)
+                .frame(width: 20, height: 30)
+                .contentShape(Rectangle())
                 .help(L10n.t("provider.reorderHelp", language))
                 .accessibilityLabel(L10n.t("provider.reorderHelp", language))
 
@@ -289,6 +329,8 @@ struct ProvidersPane: View {
                 .padding(.horizontal, 6)
         )
         .contentShape(Rectangle())
+        .opacity(isDragged ? 0.42 : 1)
+        .scaleEffect(isDragged ? 0.985 : 1)
         .onTapGesture { selectedID = row.id }
         .onHover { hovering in
             if hovering {
@@ -300,6 +342,12 @@ struct ProvidersPane: View {
         // The grip communicates reorder affordance, while the whole row stays
         // draggable so users do not need to hit a narrow handle precisely.
         .onDrag {
+            // A system drag released outside the sidebar does not call our
+            // drop delegate. Restore that stale preview before a new drag.
+            if draggedRowId != nil, let dragStartRows {
+                rows = dragStartRows
+            }
+            dragStartRows = rows
             draggedRowId = row.id
             dropTargetRowId = nil
             let provider = NSItemProvider()
@@ -335,8 +383,10 @@ struct ProvidersPane: View {
             targetPosition: position,
             draggedProviderId: $draggedRowId,
             dropTargetRowId: $dropTargetRowId,
-            move: moveRow))
+            movePreview: previewRowMove,
+            finish: finishRowMove))
         .animation(.easeOut(duration: 0.12), value: isDropTarget)
+        .animation(.easeOut(duration: 0.12), value: isDragged)
     }
 
     /// Binding that flips a single row's `enabled` flag and re-saves the
@@ -363,6 +413,7 @@ struct ProvidersPane: View {
     @State private var draggedRowId: String?
     @State private var dropTargetRowId: String?
     @State private var hoveredRowId: String?
+    @State private var dragStartRows: [BirdNionConfigStore.Provider]?
 
     // makeProvider was moved to `ServicesContainer.makeProviders(keychain:)`
 // so the same factory powers init() and the live rebuild path triggered
@@ -2569,11 +2620,13 @@ struct ProvidersPane: View {
         let targetPosition: Int
         @Binding var draggedProviderId: String?
         @Binding var dropTargetRowId: String?
-        let move: (String, Int) -> Void
+        let movePreview: (String, Int) -> Void
+        let finish: () -> Void
 
         func dropEntered(info: DropInfo) {
             guard let draggedProviderId, draggedProviderId != targetRow.id else { return }
             dropTargetRowId = targetRow.id
+            movePreview(draggedProviderId, targetPosition)
         }
 
         func dropExited(info: DropInfo) {
@@ -2583,14 +2636,37 @@ struct ProvidersPane: View {
         }
 
         func performDrop(info: DropInfo) -> Bool {
-            guard let draggedProviderId else {
+            guard draggedProviderId != nil else {
                 dropTargetRowId = nil
                 return false
             }
-            if draggedProviderId != targetRow.id {
-                move(draggedProviderId, targetPosition)
-            }
+            finish()
             self.draggedProviderId = nil
+            dropTargetRowId = nil
+            return true
+        }
+
+        func validateDrop(info: DropInfo) -> Bool {
+            draggedProviderId != nil
+                && info.hasItemsConforming(to: [ProvidersPane.providerDragType])
+        }
+
+        func dropUpdated(info: DropInfo) -> DropProposal? {
+            DropProposal(operation: .move)
+        }
+    }
+
+    /// Accepts a drop in the divider/gap between rows. The nearest row has
+    /// already updated the live preview, so this delegate only commits it.
+    private struct SidebarDropCompletionDelegate: DropDelegate {
+        @Binding var draggedProviderId: String?
+        @Binding var dropTargetRowId: String?
+        let finish: () -> Void
+
+        func performDrop(info: DropInfo) -> Bool {
+            guard draggedProviderId != nil else { return false }
+            finish()
+            draggedProviderId = nil
             dropTargetRowId = nil
             return true
         }

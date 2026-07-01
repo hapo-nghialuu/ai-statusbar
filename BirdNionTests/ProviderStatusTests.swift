@@ -82,6 +82,32 @@ final class ProviderStatusTests: XCTestCase {
         XCTAssertEqual(L10n.t("chart.latestTokens", "vi"), "Token gần nhất")
     }
 
+    func testProviderReorderMovesDownAfterHoveredRow() {
+        let rows = ["a", "b", "c", "d"].map { BirdNionConfigStore.Provider(id: $0) }
+        let reordered = ProvidersPane.reorderedProviders(
+            rows, visibleIDs: rows.map(\.id), draggedID: "a", targetIndex: 2)
+        XCTAssertEqual(reordered.map(\.id), ["b", "c", "a", "d"])
+    }
+
+    func testProviderReorderMovesUpBeforeHoveredRow() {
+        let rows = ["a", "b", "c", "d"].map { BirdNionConfigStore.Provider(id: $0) }
+        let reordered = ProvidersPane.reorderedProviders(
+            rows, visibleIDs: rows.map(\.id), draggedID: "d", targetIndex: 1)
+        XCTAssertEqual(reordered.map(\.id), ["a", "d", "b", "c"])
+    }
+
+    func testProviderReorderUsesVisibleGroupedOrder() {
+        let rows = [
+            BirdNionConfigStore.Provider(id: "a", enabled: true),
+            BirdNionConfigStore.Provider(id: "b", enabled: false),
+            BirdNionConfigStore.Provider(id: "c", enabled: true),
+            BirdNionConfigStore.Provider(id: "d", enabled: false),
+        ]
+        let reordered = ProvidersPane.reorderedProviders(
+            rows, visibleIDs: ["a", "c", "b", "d"], draggedID: "a", targetIndex: 1)
+        XCTAssertEqual(reordered.map(\.id), ["b", "c", "a", "d"])
+    }
+
     // MARK: - WindowPace (linear reserve / lasts-until-reset)
 
     func testWindowPaceReserveMatchesUnderPace() {
